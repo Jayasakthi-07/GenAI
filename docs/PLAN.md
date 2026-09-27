@@ -1214,7 +1214,7 @@ Conventions:
 - [x] Migrated + seeded PostgreSQL 18 (seed ≈ 104 s — to be cut below 60 s with the one-click reset in Phase 6); `pnpm check:ledger` 6/6 green; integration tests green
 - [x] Browser review at 1440 / 1024 / 390 in both themes (`pnpm qa:screens`, headless Edge): no console errors, no horizontal overflow; fixes applied (chart animations, KPI layout, mobile table, sales trend ending at the last complete day, `/auth/session` to avoid a 401 on the sign-in page, SPA fallback in production)
 - [x] `pnpm build && pnpm start` verified: app + API + docs on one port, SPA fallback, CSP
-- [ ] First commit — **waiting for git `user.name` / `user.email`**
+- [x] First commit (`67ed90c`)
 - [ ] **Stop for UI review**
 
 **Phase 1 decisions (beyond §1):**

@@ -6,8 +6,8 @@ catches anomalies, scores suppliers and writes reports, while people approve con
 
 - **Source of truth:** `docs/PROJECT_BRIEF.md`. Re-read the relevant section before starting each phase.
 - **Plan and status:** `docs/PLAN.md` (architecture, schema, agents, API, phase checklist). Tick items as they land.
-- **Current phase:** Phase 1 (foundations) built and green on typecheck/lint/unit tests. Remaining: migrate + seed a real
-  DB, integration tests, browser review at 3 widths × 2 themes, first commit, then STOP for the user's UI review.
+- **Current phase:** Phase 1 complete and committed. STOPPED for the user's UI review of the design system and app
+  shell. Next: Phase 2 (core inventory) after approval.
 
 ## Commands (pnpm 12, Node 24 LTS; all scripts cross-platform)
 
@@ -21,6 +21,7 @@ pnpm dev              # server (node --watch + tsx, 127.0.0.1:4000) + web (Vite,
 pnpm build && pnpm start   # production build; Fastify serves the SPA on one port
 pnpm typecheck | lint | format | test | test:e2e
 pnpm check:ledger     # verify every balance equals the sum of its ledger
+pnpm qa:screens       # screenshots of every page at 1440/1024/390 × light/dark (needs pnpm dev running)
 pnpm --filter @stockroom/server <script>   # run a script in one package
 ```
 
