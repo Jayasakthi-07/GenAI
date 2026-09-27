@@ -1,0 +1,15 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm blocks dependency build scripts unless they are reviewed here.
+allowBuilds:
+  # Verifies its platform-specific binary.
+  esbuild: true
+  # Prisma's CLI and the schema engine used by `prisma migrate`.
+  '@prisma/engines': true
+  prisma: true
+
+# Released less than pnpm's minimum release age at install time.
+minimumReleaseAgeExclude:
+  - '@fastify/static@10.1.5'

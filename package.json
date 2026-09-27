@@ -1,0 +1,45 @@
+{
+  "name": "stockroom",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Automatic Inventory Management Using Agents",
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "preflight": "node scripts/preflight.mjs",
+    "dev": "concurrently -k -n server,web -c blue,magenta \"pnpm --filter @stockroom/server dev\" \"pnpm --filter @stockroom/web dev\"",
+    "build": "pnpm --filter @stockroom/web build && pnpm --filter @stockroom/server build",
+    "start": "pnpm --filter @stockroom/server start",
+    "db:setup": "pnpm --filter @stockroom/server db:setup",
+    "db:migrate": "pnpm --filter @stockroom/server db:migrate",
+    "db:seed": "pnpm --filter @stockroom/server db:seed",
+    "db:reset": "pnpm --filter @stockroom/server db:reset",
+    "db:studio": "pnpm --filter @stockroom/server db:studio",
+    "check:ledger": "pnpm --filter @stockroom/server check:ledger",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "qa:screens": "node scripts/screenshots.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.0.0",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.9",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "typescript": "~6.0.0",
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.2"
+  }
+}

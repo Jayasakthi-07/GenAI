@@ -1,0 +1,301 @@
+@import 'tailwindcss';
+
+/* Dark mode is driven by [data-theme] on <html> (light | dark), resolved from the user's preference. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ─────────────────────────── Design tokens ───────────────────────────
+   Every colour, radius, shadow and duration in the app comes from here.
+   Text colours are chosen for WCAG AA (≥ 4.5:1) on both surface and canvas. */
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --canvas: #f4f4f6;
+  --surface: #ffffff;
+  --surface-2: #f9f9fa;
+  --surface-3: #f0f0f3;
+  --elevated: #ffffff;
+  --overlay: rgb(15 15 20 / 0.32);
+
+  /* Lines */
+  --hairline: rgb(0 0 0 / 0.08);
+  --hairline-strong: rgb(0 0 0 / 0.14);
+
+  /* Text */
+  --fg: #1c1c1e;
+  --fg-secondary: #56565e;
+  --fg-tertiary: #6e6e76;
+  --fg-disabled: #a8a8b0;
+
+  /* Accent (fill = buttons, text = links and emphasis) */
+  --accent: #0a66d8;
+  --accent-hover: #0858bd;
+  --accent-text: #0a66d8;
+  --accent-fg: #ffffff;
+  --accent-soft: rgb(10 102 216 / 0.1);
+  --focus-ring: rgb(10 102 216 / 0.45);
+
+  /* Status — used sparingly */
+  --success: #17803a;
+  --success-soft: rgb(23 128 58 / 0.1);
+  --warning: #a15c00;
+  --warning-soft: rgb(214 138 0 / 0.14);
+  --danger: #c9352b;
+  --danger-hover: #b02c23;
+  --danger-soft: rgb(201 53 43 / 0.1);
+  --neutral-soft: rgb(60 60 67 / 0.08);
+
+  /* Charts: accent + calm neutrals */
+  --chart-1: #0a66d8;
+  --chart-2: #7fa7df;
+  --chart-3: #9a9aa3;
+  --chart-4: #c9ccd3;
+  --chart-5: #17803a;
+  --chart-grid: rgb(0 0 0 / 0.06);
+  --chart-axis: #6e6e76;
+
+  /* Depth — only on floating layers */
+  --shadow-float: 0 12px 32px rgb(0 0 0 / 0.08), 0 2px 6px rgb(0 0 0 / 0.05);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04);
+
+  /* Materials */
+  --material: rgb(255 255 255 / 0.72);
+  --material-solid: #fbfbfc;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --canvas: #0f0f11;
+  --surface: #18181b;
+  --surface-2: #1d1d21;
+  --surface-3: #26262b;
+  --elevated: #202024;
+  --overlay: rgb(0 0 0 / 0.55);
+
+  --hairline: rgb(255 255 255 / 0.08);
+  --hairline-strong: rgb(255 255 255 / 0.14);
+
+  --fg: #f2f2f4;
+  --fg-secondary: #b4b4bc;
+  --fg-tertiary: #8e8e96;
+  --fg-disabled: #5c5c64;
+
+  --accent: #2a74d4;
+  --accent-hover: #3a82e0;
+  --accent-text: #6aa8ff;
+  --accent-fg: #ffffff;
+  --accent-soft: rgb(90 160 255 / 0.14);
+  --focus-ring: rgb(106 168 255 / 0.55);
+
+  --success: #4cc27a;
+  --success-soft: rgb(76 194 122 / 0.14);
+  --warning: #f0a640;
+  --warning-soft: rgb(240 166 64 / 0.15);
+  --danger: #ff6b5e;
+  --danger-hover: #ff8277;
+  --danger-soft: rgb(255 107 94 / 0.14);
+  --neutral-soft: rgb(235 235 245 / 0.08);
+
+  --chart-1: #5a9eff;
+  --chart-2: #3e6aa6;
+  --chart-3: #7c7c86;
+  --chart-4: #4a4a52;
+  --chart-5: #4cc27a;
+  --chart-grid: rgb(255 255 255 / 0.06);
+  --chart-axis: #8e8e96;
+
+  --shadow-float: 0 16px 40px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.02);
+
+  --material: rgb(24 24 27 / 0.72);
+  --material-solid: #17171a;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-elevated: var(--elevated);
+  --color-overlay: var(--overlay);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-fg: var(--fg);
+  --color-fg-secondary: var(--fg-secondary);
+  --color-fg-tertiary: var(--fg-tertiary);
+  --color-fg-disabled: var(--fg-disabled);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-text: var(--accent-text);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-soft: var(--danger-soft);
+  --color-neutral-soft: var(--neutral-soft);
+
+  --shadow-float: var(--shadow-float);
+  --shadow-card: var(--shadow-card);
+}
+
+@theme {
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+
+  /* Type scale: 12 / 13 / 15 / 17 / 20 / 24 / 32 */
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 13px;
+  --text-sm--line-height: 18px;
+  --text-base: 15px;
+  --text-base--line-height: 22px;
+  --text-lg: 17px;
+  --text-lg--line-height: 24px;
+  --text-xl: 20px;
+  --text-xl--line-height: 26px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 30px;
+  --text-3xl: 32px;
+  --text-3xl--line-height: 38px;
+
+  --tracking-tight: -0.01em;
+  --tracking-tighter: -0.02em;
+
+  /* Radius scale: chips 6 · controls 8 · cards 14 · sheets/dialogs 20 */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --animate-fade-in: fade-in 180ms var(--ease-out);
+  --animate-scale-in: scale-in 180ms var(--ease-out);
+  --animate-slide-in-right: slide-in-right 240ms var(--ease-out);
+  --animate-slide-in-left: slide-in-left 240ms var(--ease-out);
+  --animate-slide-in-bottom: slide-in-bottom 240ms var(--ease-out);
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-pulse-dot: pulse-dot 1.8s var(--ease-in-out) infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes slide-in-left {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes slide-in-bottom {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+}
+
+/* ─────────────────────────── Base ─────────────────────────── */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background: var(--canvas);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  /* Thin, quiet scrollbars. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--hairline-strong) transparent;
+  }
+}
+
+/* ─────────────────────────── Utilities ─────────────────────────── */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum', 'cv11';
+}
+
+/* Translucent material for the sidebar, top bar and sheets; solid when blur isn't available. */
+@utility material {
+  background: var(--material-solid);
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    background: var(--material);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+}
+
+@utility skeleton {
+  background: linear-gradient(90deg, var(--surface-3) 25%, var(--surface-2) 50%, var(--surface-3) 75%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
