@@ -95,12 +95,18 @@ export const REASON_CODES = [
     direction: 'OUT',
     appliesTo: ['WRITE_OFF', 'ADJUSTMENT'],
   },
-  { code: 'SAMPLE', label: 'Samples and promotions', direction: 'OUT', appliesTo: ['ADJUSTMENT'] },
+  { code: 'SAMPLE', label: 'Samples and promotions', direction: 'OUT', appliesTo: ['ADJUSTMENT', 'ISSUE'] },
   {
     code: 'COUNT_VARIANCE',
     label: 'Cycle-count variance',
     direction: 'BOTH',
     appliesTo: ['COUNT_CORRECTION'],
+  },
+  {
+    code: 'INTERNAL_USE',
+    label: 'Internal use (store, office, canteen)',
+    direction: 'OUT',
+    appliesTo: ['ISSUE'],
   },
 ] as const;
 

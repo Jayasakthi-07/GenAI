@@ -3,7 +3,9 @@
   "compilerOptions": {
     "types": ["node"],
     // The generated Prisma client imports its own files with .ts extensions.
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    // PDF documents are React components rendered with @react-pdf/renderer.
+    "jsx": "react-jsx"
   },
   "include": ["src", "prisma", "test", "prisma.config.ts", "tsdown.config.ts", "vitest.config.ts"]
 }

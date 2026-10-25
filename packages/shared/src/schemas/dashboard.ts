@@ -17,7 +17,26 @@ export const dashboardOverviewSchema = z.object({
     daysOfInventory: z.number(),
     activeSkus: z.number().int(),
     warehouses: z.number().int(),
+    openPurchaseOrders: z.object({ count: z.number().int(), value: z.string(), overdue: z.number().int() }),
+    pendingApprovals: z.number().int(),
+    /** Annualised: cost of goods sold over the last 90 days × (365 / 90) ÷ current inventory value. */
+    turnover: z.number(),
+    openAlerts: z.object({ total: z.number().int(), critical: z.number().int(), high: z.number().int() }),
   }),
+  /** Locations most at risk of running out: fewest days of cover relative to lead time. */
+  stockoutRisk: z.array(
+    z.object({
+      productId: z.uuid(),
+      sku: z.string(),
+      name: z.string(),
+      warehouse: z.string(),
+      available: z.number().int(),
+      avgDailyDemand: z.number(),
+      daysOfCover: z.number(),
+      leadTimeDays: z.number().int(),
+      onOrder: z.number().int(),
+    }),
+  ),
   /** Daily inventory value (whole rupees) for the period, ending today. */
   valueTrend: z.array(z.object({ date: z.string(), value: z.number() })),
   /** Daily revenue (whole rupees) with a 7-day moving average. */

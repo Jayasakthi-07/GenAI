@@ -21,6 +21,7 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: {
         '/api': { target: `http://127.0.0.1:${apiPort}`, changeOrigin: false },
+        '/uploads': { target: `http://127.0.0.1:${apiPort}`, changeOrigin: false },
       },
     },
     preview: { host: '127.0.0.1', port: webPort, strictPort: true },

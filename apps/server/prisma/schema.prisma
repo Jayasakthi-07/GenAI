@@ -246,6 +246,8 @@ enum MovementType {
   RECEIPT
   SALE
   RETURN
+  /// Goods leaving stock for internal use, samples or promotions (reason required).
+  ISSUE
   ADJUSTMENT
   WRITE_OFF
   TRANSFER_OUT

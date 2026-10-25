@@ -1228,16 +1228,26 @@ Conventions:
 
 ### Phase 2 — Core inventory
 
-- [ ] Catalog: categories (tree), units, products (table with search, filters, sort, column visibility, density, saved views, bulk actions, virtualization, stacked cards on mobile), product create/edit, image upload, detail page tabs (overview, stock by warehouse, movements, sales chart, suppliers, activity)
-- [ ] CSV import (preview, validation, error report) and CSV/XLSX export
-- [ ] `InventoryService.recordMovement` + receive / issue / adjust (reason codes) / write-off; batches and FEFO suggestions; ledger invariant tests
-- [ ] Warehouses, transfers (ship → receive), cycle counts with variance review and approval
-- [ ] Suppliers, supplier catalog, scorecard page (metrics computed; charts)
-- [ ] Purchase orders: full state machine, receiving (partial), PDF export
-- [ ] Customers, sales orders (reserve → fulfill with FEFO)
-- [ ] Alerts center (manual and rule alerts for now), audit log page with diffs
-- [ ] Dashboard v1 (KPIs with deltas and sparklines, value trend, category mix, top movers, stockout risk)
-- [ ] API integration tests for core routes; verify in the browser; commit
+- [x] Catalog: categories (tree), units, products (table with search, filters, sort, column visibility, density, saved views, bulk actions, virtualization, stacked cards on mobile), product create/edit, image upload, detail page tabs (overview, stock by warehouse, movements, sales chart, suppliers, activity)
+- [x] CSV import (preview, validation, error report) and CSV/XLSX export
+- [x] `InventoryService.recordMovement` + receive / issue / adjust (reason codes) / write-off; batches and FEFO suggestions; ledger invariant tests
+- [x] Warehouses, transfers (ship → receive), cycle counts with variance review and approval
+- [x] Suppliers, supplier catalog, scorecard page (metrics computed; charts)
+- [x] Purchase orders: full state machine, receiving (partial), PDF export
+- [x] Customers, sales orders (reserve → fulfill with FEFO)
+- [x] Alerts center (manual and rule alerts for now), audit log page with diffs
+- [x] Dashboard v1 (KPIs with deltas and sparklines, value trend, category mix, top movers, stockout risk)
+- [x] API integration tests for core routes; verify in the browser; commit
+
+**Phase 2 decisions:**
+
+- Stock routes are `/stock/positions`, `/stock/movements`, `/stock/batches`, `/stock/fefo`; the audit log is `/audit-log`; PO receipts are `POST /purchase-orders/:id/receipts`; PO `reject` returns a pending PO to draft with the reason in its notes.
+- `v_stock_positions` (SQL view) is the single definition of on order, days of cover and stock state (OUT / LOW / ON_ORDER / OK / OVER) for the API, the dashboard and the rule-based stock check.
+- A rule-based stock check (`AlertService.runStockCheck`, deterministic analyzers in `analytics/stock-health.ts`) runs at startup, after stock changes (debounced) and every 15 minutes, until the Stock Sentinel agent takes it over in Phase 4. It auto-resolves alerts whose condition cleared.
+- Cycle counts are blind: expected quantities are hidden in the UI while counting.
+- Settings for organization (profile + operational thresholds), users and roles, warehouses, categories, units and reason codes shipped now; record search (`GET /search`) and the command palette's record results too.
+- **pg_trgm removed.** Windows application-control policies (Smart App Control) can block PostgreSQL's `pg_trgm.dll`, which broke every write to tables with trigram indexes. The tables are small, so search uses `ILIKE`; migration `20261025000000_drop_trigram_search` drops the indexes and the init migration no longer creates them.
+- The demo history ends on the day the seed runs. Re-run `pnpm db:seed` (or the one-click reset in Phase 6) when the dates go stale.
 
 ### Phase 3 — LLM gateway
 

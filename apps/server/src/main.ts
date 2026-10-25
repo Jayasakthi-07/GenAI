@@ -4,6 +4,7 @@ import { buildApp } from './app';
 import { EnvError, formatEnvError, loadRootEnv, parseEnv } from './config/env';
 import { assertDatabaseReachable, createPrisma } from './db/client';
 import { AppError } from './domain/errors';
+import { startStockWatch } from './jobs/stock-watch';
 import { loggerOptions } from './lib/logger';
 
 async function main() {
@@ -17,11 +18,13 @@ async function main() {
   await assertDatabaseReachable(prisma, env.DATABASE_URL);
 
   const app = await buildApp({ env, prisma, logger: logOptions, serveWeb: isProd });
+  const stopStockWatch = startStockWatch(app.bus, app.services.alerts, app.log);
 
   const shutdown = async (signal: string) => {
     log.info({ signal }, 'shutting down');
     const force = setTimeout(() => process.exit(1), 10_000);
     force.unref();
+    stopStockWatch();
     await app.close();
     await prisma.$disconnect();
     process.exit(0);

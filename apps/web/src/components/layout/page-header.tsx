@@ -23,6 +23,17 @@ export function PageHeader({ title, description, actions, eyebrow, className }: 
   );
 }
 
+/**
+ * Page whose main table fills the window on tablet and desktop: the header and toolbar stay put,
+ * rows scroll inside the table (so its header stays visible), and pagination sits at the bottom.
+ * On phones it flows normally with stacked cards.
+ */
+export function ListPage({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <Page className={cn('md:flex md:h-[calc(100dvh-3.5rem)] md:flex-col lg:pb-6', className)} {...props} />
+  );
+}
+
 /** Standard page container: generous gutters, max width for readability on large screens. */
 export function Page({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (

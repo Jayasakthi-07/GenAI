@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
@@ -21,10 +21,18 @@ import type { Db } from './db/client';
 import { EventBus } from './domain/events';
 import { authPlugin } from './http/plugins/auth';
 import { errorsPlugin } from './http/plugins/errors';
+import { alertRoutes } from './http/routes/alerts';
 import { authRoutes } from './http/routes/auth';
+import { catalogRoutes } from './http/routes/catalog';
 import { dashboardRoutes, meRoutes } from './http/routes/dashboard';
+import { operationsRoutes } from './http/routes/operations';
+import { productRoutes } from './http/routes/products';
+import { purchasingRoutes } from './http/routes/purchasing';
+import { salesRoutes } from './http/routes/sales';
+import { settingsRoutes } from './http/routes/settings';
+import { stockRoutes } from './http/routes/stock';
 import { systemRoutes } from './http/routes/system';
-import { createServices, type Services } from './services';
+import { createServices, type Services, uploadsDir } from './services';
 
 export interface BuildAppOptions {
   env: Env;
@@ -121,9 +129,29 @@ export async function buildApp({ env, prisma, logger = false, serveWeb = false }
       await api.register(authRoutes, { services });
       await api.register(meRoutes, { services });
       await api.register(dashboardRoutes, { services });
+      await api.register(catalogRoutes, { services });
+      await api.register(productRoutes, { services });
+      await api.register(stockRoutes, { services });
+      await api.register(operationsRoutes, { services });
+      await api.register(purchasingRoutes, { services });
+      await api.register(salesRoutes, { services });
+      await api.register(alertRoutes, { services });
+      await api.register(settingsRoutes, { services });
     },
     { prefix: API_PREFIX },
   );
+
+  // Product images. Only files the product service wrote live here (random names, image types only).
+  const uploads = uploadsDir();
+  mkdirSync(uploads, { recursive: true });
+  await app.register(fastifyStatic, {
+    root: uploads,
+    prefix: '/uploads/',
+    decorateReply: false,
+    index: false,
+    dotfiles: 'deny',
+    maxAge: '1h',
+  });
 
   if (serveWeb) {
     const webDist = resolve(findRepoRoot(), 'apps/web/dist');

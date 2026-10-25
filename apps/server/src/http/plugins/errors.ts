@@ -79,7 +79,12 @@ export const errorsPlugin = fp(
 
     // One not-found handler for the whole app: JSON for the API, index.html for client-side routes.
     app.setNotFoundHandler((request, reply) => {
-      if (opts.spaFallback && request.method === 'GET' && !request.url.startsWith('/api/')) {
+      if (
+        opts.spaFallback &&
+        request.method === 'GET' &&
+        !request.url.startsWith('/api/') &&
+        !request.url.startsWith('/uploads/')
+      ) {
         return reply.type('text/html').sendFile('index.html');
       }
       return reply.status(404).send({

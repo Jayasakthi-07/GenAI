@@ -26,7 +26,7 @@ export function TR({
   interactive,
   selected,
   ...props
-}: React.HTMLAttributes<HTMLTableRowElement> & { interactive?: boolean; selected?: boolean }) {
+}: React.ComponentProps<'tr'> & { interactive?: boolean; selected?: boolean }) {
   return (
     <tr
       className={cn(

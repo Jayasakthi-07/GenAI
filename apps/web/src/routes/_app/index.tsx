@@ -1,15 +1,17 @@
 import { formatDays, formatMoney, formatNumber, formatPercent } from '@stockroom/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { format, parseISO } from 'date-fns';
 import {
-  Boxes,
+  Bell,
   CircleCheck,
+  ClipboardCheck,
   Clock,
   IndianRupee,
   PackageX,
   RefreshCcw,
   TrendingUp,
+  Truck,
   Warehouse,
 } from 'lucide-react';
 import { z } from 'zod';
@@ -17,6 +19,7 @@ import { CHART_COLORS, DonutChart, TrendChart } from '@/components/charts/charts
 import { EmptyState, ErrorState } from '@/components/feedback/states';
 import { Page, PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { KpiCard, KpiCardSkeleton } from '@/components/ui/kpi-card';
 import { Skeleton } from '@/components/ui/misc';
 import { SegmentedControl } from '@/components/ui/tabs';
@@ -128,8 +131,8 @@ function DashboardPage() {
                   icon={<Clock strokeWidth={1.75} />}
                   value={data.kpis.daysOfInventory}
                   format={(v) => formatDays(v)}
-                  footnote="At the last 90 days’ rate of sales"
-                  hint="Inventory value ÷ average daily cost of goods sold over the last 90 days."
+                  footnote={`Turns over ${formatNumber(data.kpis.turnover, { decimals: 1 })}× a year`}
+                  hint="Inventory value ÷ average daily cost of goods sold over the last 90 days. Turnover is the yearly rate: cost of goods sold ÷ inventory value."
                 />
               </>
             ) : (
@@ -139,28 +142,196 @@ function DashboardPage() {
 
           {/* Attention strip */}
           {data && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <AttentionStat
+                to="/stock"
+                search={{ state: ['OUT'] }}
                 icon={<PackageX strokeWidth={1.75} />}
                 tone={data.kpis.outOfStock > 0 ? 'danger' : 'success'}
                 value={data.kpis.outOfStock}
                 label="Out of stock"
-                detail="Product × warehouse, nothing on hand"
+                detail="Product × warehouse with nothing available"
               />
               <AttentionStat
+                to="/stock"
+                search={{ state: ['LOW'] }}
                 icon={<RefreshCcw strokeWidth={1.75} />}
                 tone={data.kpis.needsReorder > 0 ? 'warning' : 'success'}
                 value={data.kpis.needsReorder}
                 label="Need reordering"
-                detail="At or below reorder point, nothing on order"
+                detail="At or below the reorder point, not covered by orders"
               />
               <AttentionStat
-                icon={<Boxes strokeWidth={1.75} />}
-                tone="neutral"
-                value={data.kpis.unitsSold.current}
-                label="Units sold · 30 days"
-                detail={`${formatPercent(change(data.kpis.unitsSold.current, data.kpis.unitsSold.previous) ?? 0, { signed: true })} vs prior 30 days`}
+                to="/purchase-orders"
+                search={{ status: ['APPROVED', 'SENT', 'PARTIALLY_RECEIVED'] }}
+                icon={<Truck strokeWidth={1.75} />}
+                tone={data.kpis.openPurchaseOrders.overdue > 0 ? 'warning' : 'neutral'}
+                value={data.kpis.openPurchaseOrders.count}
+                label="Open purchase orders"
+                detail={`${moneyCompact(Number(data.kpis.openPurchaseOrders.value))} on order${data.kpis.openPurchaseOrders.overdue ? ` · ${data.kpis.openPurchaseOrders.overdue} overdue` : ''}`}
               />
+              <AttentionStat
+                to="/purchase-orders"
+                search={{ status: ['PENDING_APPROVAL'] }}
+                icon={<ClipboardCheck strokeWidth={1.75} />}
+                tone={data.kpis.pendingApprovals > 0 ? 'accent' : 'neutral'}
+                value={data.kpis.pendingApprovals}
+                label="Awaiting approval"
+                detail="Purchase orders and agent proposals"
+              />
+            </div>
+          )}
+
+          {/* Risks */}
+          {data && (
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+              <Card className="overflow-hidden xl:col-span-2">
+                <CardHeader>
+                  <div>
+                    <CardTitle>Stockout risk</CardTitle>
+                    <CardDescription>
+                      Fewest days of cover relative to the supplier’s lead time
+                    </CardDescription>
+                  </div>
+                  <Link
+                    to="/stock"
+                    search={{ state: ['OUT', 'LOW', 'ON_ORDER'] }}
+                    className="text-sm font-medium text-accent-text hover:underline"
+                  >
+                    View all
+                  </Link>
+                </CardHeader>
+                <CardContent className="px-0 pb-2">
+                  {data.stockoutRisk.length ? (
+                    <Table className="table-fixed">
+                      <THead>
+                        <TR>
+                          <TH className="pl-5">Product</TH>
+                          <TH numeric className="w-24">
+                            Available
+                          </TH>
+                          <TH numeric className="w-24">
+                            Cover
+                          </TH>
+                          <TH numeric className="hidden w-24 sm:table-cell">
+                            Lead time
+                          </TH>
+                          <TH numeric className="w-24 pr-5">
+                            On order
+                          </TH>
+                        </TR>
+                      </THead>
+                      <TBody>
+                        {data.stockoutRisk.map((r) => (
+                          <TR
+                            key={`${r.productId}-${r.warehouse}`}
+                            interactive
+                            onClick={() =>
+                              void navigate({
+                                to: '/products/$id',
+                                params: { id: r.productId },
+                                search: { tab: 'stock' },
+                              })
+                            }
+                          >
+                            <TD density={preferences.density} className="max-w-0 pl-5">
+                              <p className="truncate font-medium">{r.name}</p>
+                              <p className="truncate text-xs text-fg-tertiary">
+                                {r.sku} · {r.warehouse}
+                              </p>
+                            </TD>
+                            <TD numeric density={preferences.density}>
+                              {formatNumber(r.available)}
+                            </TD>
+                            <TD
+                              numeric
+                              density={preferences.density}
+                              className={cn(
+                                'font-medium',
+                                r.daysOfCover < r.leadTimeDays / 2 ? 'text-danger' : 'text-warning',
+                              )}
+                            >
+                              {formatDays(r.daysOfCover)}
+                            </TD>
+                            <TD
+                              numeric
+                              density={preferences.density}
+                              className="hidden text-fg-secondary sm:table-cell"
+                            >
+                              {formatDays(r.leadTimeDays)}
+                            </TD>
+                            <TD numeric density={preferences.density} className="pr-5">
+                              {r.onOrder ? (
+                                formatNumber(r.onOrder)
+                              ) : (
+                                <span className="text-danger">None</span>
+                              )}
+                            </TD>
+                          </TR>
+                        ))}
+                      </TBody>
+                    </Table>
+                  ) : (
+                    <EmptyState
+                      compact
+                      icon={<CircleCheck strokeWidth={1.75} />}
+                      title="No stockout risk"
+                      description="Every item has more cover than its supplier’s lead time."
+                    />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div>
+                    <CardTitle>Open alerts</CardTitle>
+                    <CardDescription>Raised by the Stock Sentinel’s rules and the agents</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4">
+                  <div>
+                    <p className="tabular text-3xl font-semibold tracking-tight">
+                      {formatNumber(data.kpis.openAlerts.total)}
+                    </p>
+                    <p className="text-sm text-fg-secondary">need attention</p>
+                  </div>
+                  <ul className="flex flex-col gap-2 text-sm">
+                    <li className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <span className="size-2 rounded-full bg-danger" aria-hidden /> Critical
+                      </span>
+                      <span className="tabular font-medium">
+                        {formatNumber(data.kpis.openAlerts.critical)}
+                      </span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <span className="size-2 rounded-full bg-danger/60" aria-hidden /> High
+                      </span>
+                      <span className="tabular font-medium">{formatNumber(data.kpis.openAlerts.high)}</span>
+                    </li>
+                    <li className="flex items-center justify-between text-fg-secondary">
+                      <span className="flex items-center gap-2">
+                        <span className="size-2 rounded-full bg-hairline-strong" aria-hidden /> Medium and
+                        below
+                      </span>
+                      <span className="tabular">
+                        {formatNumber(
+                          data.kpis.openAlerts.total -
+                            data.kpis.openAlerts.critical -
+                            data.kpis.openAlerts.high,
+                        )}
+                      </span>
+                    </li>
+                  </ul>
+                  <Button variant="secondary" size="sm" asChild className="self-start">
+                    <Link to="/alerts">
+                      <Bell strokeWidth={1.75} /> Open alerts center
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           )}
 
@@ -354,21 +525,33 @@ function AttentionStat({
   value,
   label,
   detail,
+  to,
+  search,
 }: {
   icon: React.ReactNode;
-  tone: 'danger' | 'warning' | 'success' | 'neutral';
+  tone: 'danger' | 'warning' | 'success' | 'neutral' | 'accent';
   value: number;
   label: string;
   detail: string;
+  to: '/stock' | '/purchase-orders' | '/alerts';
+  search: Record<string, unknown>;
 }) {
   const toneClasses = {
     danger: 'bg-danger-soft text-danger',
     warning: 'bg-warning-soft text-warning',
     success: 'bg-success-soft text-success',
     neutral: 'bg-neutral-soft text-fg-secondary',
+    accent: 'bg-accent-soft text-accent-text',
   }[tone];
   return (
-    <Card className="flex items-center gap-4 p-4">
+    <Link
+      to={to}
+      search={search}
+      className={cn(
+        'flex items-center gap-4 rounded-lg border border-hairline bg-surface p-4 shadow-card transition-colors hover:border-hairline-strong hover:bg-surface-2',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
+      )}
+    >
       <div
         className={cn('grid size-10 shrink-0 place-items-center rounded-full [&_svg]:size-5', toneClasses)}
       >
@@ -381,7 +564,7 @@ function AttentionStat({
         </p>
         <p className="line-clamp-2 text-xs text-fg-tertiary">{detail}</p>
       </div>
-    </Card>
+    </Link>
   );
 }
 

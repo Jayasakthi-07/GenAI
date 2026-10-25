@@ -22,9 +22,34 @@ const WIDTHS = [
   { name: '390', width: 390, height: 844, mobile: true },
 ];
 const THEMES = ['light', 'dark'];
+/** `path` may use :product, :po, :so, :supplier, :transfer and :count, resolved from the API once. */
 const PAGES = [
   { key: 'login', path: '/login', auth: false },
   { key: 'dashboard', path: '/', full: true },
+  { key: 'alerts', path: '/alerts' },
+  { key: 'products', path: '/products' },
+  { key: 'product', path: '/products/:product', full: true },
+  { key: 'product-stock', path: '/products/:product?tab=stock' },
+  { key: 'product-new', path: '/products/new' },
+  { key: 'stock', path: '/stock' },
+  { key: 'stock-movements', path: '/stock/movements' },
+  { key: 'stock-batches', path: '/stock/batches' },
+  { key: 'transfers', path: '/transfers' },
+  { key: 'transfer', path: '/transfers/:transfer' },
+  { key: 'cycle-counts', path: '/cycle-counts' },
+  { key: 'cycle-count', path: '/cycle-counts/:count' },
+  { key: 'suppliers', path: '/suppliers' },
+  { key: 'supplier', path: '/suppliers/:supplier', full: true },
+  { key: 'purchase-orders', path: '/purchase-orders' },
+  { key: 'purchase-order', path: '/purchase-orders/:po', full: true },
+  { key: 'po-new', path: '/purchase-orders/new' },
+  { key: 'sales-orders', path: '/sales-orders' },
+  { key: 'sales-order', path: '/sales-orders/:so' },
+  { key: 'customers', path: '/customers' },
+  { key: 'audit', path: '/audit' },
+  { key: 'settings-organization', path: '/settings/organization', full: true },
+  { key: 'settings-warehouses', path: '/settings/warehouses' },
+  { key: 'settings-categories', path: '/settings/categories' },
   { key: 'settings-appearance', path: '/settings/appearance' },
   { key: 'settings-account', path: '/settings/account' },
   { key: 'about', path: '/about' },
@@ -32,6 +57,23 @@ const PAGES = [
   { key: 'palette', path: '/', action: 'palette' },
   { key: 'menu', path: '/', action: 'menu', mobileOnly: true },
 ];
+
+async function resolveIds(request) {
+  const first = async (path) => {
+    const res = await request.get(`${base}/api/v1${path}`);
+    const body = await res.json();
+    return body.data?.[0]?.id ?? '';
+  };
+  return {
+    product: await first('/products?pageSize=1&sort=value:desc'),
+    po: await first('/purchase-orders?pageSize=1&status=PARTIALLY_RECEIVED'),
+    so: await first('/sales-orders?pageSize=1&status=FULFILLED'),
+    supplier: await first('/suppliers?pageSize=1&sort=score:asc'),
+    transfer: await first('/transfers?pageSize=1'),
+    count: await first('/cycle-counts?pageSize=1'),
+  };
+}
+let ids = null;
 
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const problems = [];
@@ -51,6 +93,7 @@ try {
         headers: { origin: base },
       });
       if (!login.ok()) throw new Error(`Login failed: ${login.status()} ${await login.text()}`);
+      ids ??= await resolveIds(context.request);
 
       for (const page of PAGES) {
         if (only.length && !only.includes(page.key)) continue;
@@ -73,7 +116,8 @@ try {
         tab.on('pageerror', (e) =>
           problems.push(`${page.key} ${theme} ${size.name}: page error: ${e.message}`),
         );
-        await tab.goto(`${base}${page.path}`, { waitUntil: 'networkidle' });
+        const path = page.path.replace(/:(\w+)/g, (_, k) => ids[k] ?? '');
+        await tab.goto(`${base}${path}`, { waitUntil: 'networkidle' });
         await tab.waitForTimeout(400);
         if (page.action === 'palette') {
           await tab.keyboard.press('Control+K');

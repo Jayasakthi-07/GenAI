@@ -95,6 +95,21 @@ export function DropdownMenuRadioItem({
   );
 }
 
+export function DropdownMenuCheckboxItem({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof Menu.CheckboxItem>) {
+  return (
+    <Menu.CheckboxItem className={cn(itemClasses, 'pr-8', className)} {...props}>
+      {children}
+      <Menu.ItemIndicator className="absolute right-2.5 flex">
+        <Check className="size-4 !text-accent-text" strokeWidth={2} />
+      </Menu.ItemIndicator>
+    </Menu.CheckboxItem>
+  );
+}
+
 export function DropdownMenuLabel({ className, ...props }: React.ComponentProps<typeof Menu.Label>) {
   return (
     <Menu.Label

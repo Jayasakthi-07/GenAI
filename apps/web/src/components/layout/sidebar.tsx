@@ -1,5 +1,7 @@
 import { APP_VERSION } from '@stockroom/shared';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
+import { alertCountsQuery } from '@/features/alerts/api';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useCan } from '@/lib/auth';
 import { FOOTER_NAV, NAV, type NavItem } from '@/lib/nav';
@@ -30,7 +32,7 @@ function NavLink({
       onClick={onNavigate}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'group flex h-8 items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors duration-150',
+        'group relative flex h-8 items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-colors duration-150',
         'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
         active ? 'bg-accent-soft text-accent-text' : 'text-fg-secondary hover:bg-neutral-soft hover:text-fg',
         collapsed && 'justify-center px-0',
@@ -44,6 +46,7 @@ function NavLink({
         strokeWidth={1.75}
       />
       {!collapsed && <span className="truncate">{item.label}</span>}
+      {item.badge === 'alerts' && <AlertsBadge collapsed={collapsed} />}
     </Link>
   );
   return collapsed ? (
@@ -52,6 +55,26 @@ function NavLink({
     </Tooltip>
   ) : (
     link
+  );
+}
+
+/** Urgent (critical + high) open alerts; hidden when there are none. */
+function AlertsBadge({ collapsed }: { collapsed: boolean }) {
+  const { data } = useQuery(alertCountsQuery);
+  const urgent = (data?.bySeverity.CRITICAL ?? 0) + (data?.bySeverity.HIGH ?? 0);
+  if (!urgent) return null;
+  return collapsed ? (
+    <span
+      className="absolute top-1 right-1.5 size-2 rounded-full bg-danger ring-2 ring-[var(--material-solid)]"
+      aria-label={`${urgent} urgent alerts`}
+    />
+  ) : (
+    <span
+      className="ml-auto rounded-full bg-danger-soft px-1.5 tabular text-xs font-semibold text-danger"
+      aria-label={`${urgent} urgent alerts`}
+    >
+      {urgent > 99 ? '99+' : urgent}
+    </span>
   );
 }
 

@@ -6,8 +6,7 @@ catches anomalies, scores suppliers and writes reports, while people approve con
 
 - **Source of truth:** `docs/PROJECT_BRIEF.md`. Re-read the relevant section before starting each phase.
 - **Plan and status:** `docs/PLAN.md` (architecture, schema, agents, API, phase checklist). Tick items as they land.
-- **Current phase:** Phase 1 complete and committed. STOPPED for the user's UI review of the design system and app
-  shell. Next: Phase 2 (core inventory) after approval.
+- **Current phase:** Phase 2 (core inventory) complete and committed. Next: Phase 3 (LLM gateway), then 4–7 in order.
 
 ## Commands (pnpm 12, Node 24 LTS; all scripts cross-platform)
 
@@ -69,8 +68,9 @@ docs/             brief, plan, architecture, agents, demo script
 - TypeScript **6.0.x** strict (typescript-eslint doesn't support TS 7 yet). No `any` without an explaining comment.
 - Prisma **7.10** (not the `latest` 8.0 RC): `prisma.config.ts`, `prisma-client` generator → `src/generated/prisma`,
   `@prisma/adapter-pg`. UUIDv7 ids. snake_case tables/columns via `@map`. All timestamps `timestamptz`.
-  Raw SQL in migrations for CHECKs, partial unique indexes and pg_trgm — when generating later migrations, strip
-  any `DROP` of those hand-written objects (see PLAN.md "Phase 1 decisions").
+  Raw SQL in migrations for CHECKs, partial unique indexes and the `v_stock_positions` view — when generating later
+  migrations, strip any `DROP` of those hand-written objects (see PLAN.md "Phase 1 decisions"). No native
+  PostgreSQL extensions (Windows Smart App Control blocked `pg_trgm`; see "Phase 2 decisions").
 - Demo data lives in `apps/server/src/demo/` (catalog, simulator, plants, bulk insert). Planted situations must stay
   date-independent: after changing the simulator, dry-run several `--date=` values; `seed.test.ts` guards invariants.
 - Never put `NODE_ENV` in `.env` (Vite would bundle development React).

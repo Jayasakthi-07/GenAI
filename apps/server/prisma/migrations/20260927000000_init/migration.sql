@@ -1287,8 +1287,5 @@ CREATE UNIQUE INDEX "agent_actions_open_dedupe_key" ON "agent_actions" ("dedupe_
 -- At most one default warehouse.
 CREATE UNIQUE INDEX "warehouses_single_default" ON "warehouses" ("is_default") WHERE "is_default";
 
--- Fast "contains" search for the products table, the command palette and agent tools.
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE INDEX "products_search_trgm" ON "products" USING gin ("name" gin_trgm_ops, "sku" gin_trgm_ops);
-CREATE INDEX "suppliers_name_trgm" ON "suppliers" USING gin ("name" gin_trgm_ops);
-CREATE INDEX "customers_name_trgm" ON "customers" USING gin ("name" gin_trgm_ops);
+-- "Contains" search uses ILIKE without trigram indexes: the catalog is small, and pg_trgm is a native
+-- library that Windows Smart App Control can block (see 20261025000000_drop_trigram_search).
