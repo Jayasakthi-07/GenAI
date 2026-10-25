@@ -246,13 +246,11 @@ function AlertsPage() {
           label="Severity"
           value={search.severity}
           onChange={(v) => setSearch({ severity: v as Search['severity'] })}
-          options={[...SEVERITIES]
-            .reverse()
-            .map((s) => ({
-              value: s,
-              label: SEVERITY_LABELS[s],
-              hint: summary ? formatNumber(summary.bySeverity[s]) : undefined,
-            }))}
+          options={[...SEVERITIES].reverse().map((s) => ({
+            value: s,
+            label: SEVERITY_LABELS[s],
+            hint: summary ? formatNumber(summary.bySeverity[s]) : undefined,
+          }))}
         />
         <FilterMenu
           label="Type"

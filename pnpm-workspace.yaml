@@ -9,6 +9,10 @@ allowBuilds:
   # Prisma's CLI and the schema engine used by `prisma migrate`.
   '@prisma/engines': true
   prisma: true
+  # Its preinstall is a no-op echo.
+  '@google/genai': false
+  # Its postinstall only checks dependent versions.
+  protobufjs: false
 
 # Released less than pnpm's minimum release age at install time.
 minimumReleaseAgeExclude:

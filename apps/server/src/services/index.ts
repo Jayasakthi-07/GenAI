@@ -1,7 +1,10 @@
 import { resolve } from 'node:path';
+import { LlmGateway } from '../ai/gateway/gateway';
+import { ProviderRegistry } from '../ai/gateway/registry';
 import { type Env, findRepoRoot } from '../config/env';
 import type { Db } from '../db/client';
 import type { EventBus } from '../domain/events';
+import { AiService } from './ai.service';
 import { AlertService } from './alert.service';
 import { AuditService } from './audit.service';
 import { AuthService } from './auth.service';
@@ -31,7 +34,10 @@ export function createServices({ prisma, bus, env }: ServiceDeps) {
   const inventory = new InventoryService(prisma, bus);
   const catalog = new CatalogService(prisma, bus);
   const suppliers = new SupplierService(prisma, bus);
+  const registry = new ProviderRegistry(prisma, env);
+  const gateway = new LlmGateway(prisma, registry, bus);
   const services = {
+    ai: new AiService(prisma, bus, gateway, registry),
     auth: new AuthService(prisma, bus, env.SESSION_TTL_HOURS),
     users: new UserService(prisma),
     dashboard: new DashboardService(prisma),

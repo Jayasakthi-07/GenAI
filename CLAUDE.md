@@ -6,7 +6,8 @@ catches anomalies, scores suppliers and writes reports, while people approve con
 
 - **Source of truth:** `docs/PROJECT_BRIEF.md`. Re-read the relevant section before starting each phase.
 - **Plan and status:** `docs/PLAN.md` (architecture, schema, agents, API, phase checklist). Tick items as they land.
-- **Current phase:** Phase 2 (core inventory) complete and committed. Next: Phase 3 (LLM gateway), then 4–7 in order.
+- **Current phase:** Phases 2 (core inventory) and 3 (LLM gateway) complete and committed. Next: Phase 4 (agent
+  runtime), then 5–7 in order.
 
 ## Commands (pnpm 12, Node 24 LTS; all scripts cross-platform)
 

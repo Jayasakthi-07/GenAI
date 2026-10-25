@@ -21,6 +21,7 @@ import type { Db } from './db/client';
 import { EventBus } from './domain/events';
 import { authPlugin } from './http/plugins/auth';
 import { errorsPlugin } from './http/plugins/errors';
+import { aiRoutes } from './http/routes/ai';
 import { alertRoutes } from './http/routes/alerts';
 import { authRoutes } from './http/routes/auth';
 import { catalogRoutes } from './http/routes/catalog';
@@ -56,6 +57,7 @@ export async function buildApp({ env, prisma, logger = false, serveWeb = false }
 
   const bus = new EventBus();
   const services: Services = createServices({ prisma, bus, env });
+  await services.ai.init();
   app.decorate('services', services);
   app.decorate('bus', bus);
 
@@ -137,6 +139,7 @@ export async function buildApp({ env, prisma, logger = false, serveWeb = false }
       await api.register(salesRoutes, { services });
       await api.register(alertRoutes, { services });
       await api.register(settingsRoutes, { services });
+      await api.register(aiRoutes, { services });
     },
     { prefix: API_PREFIX },
   );

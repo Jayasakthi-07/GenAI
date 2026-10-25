@@ -32,6 +32,7 @@ import { Route as AppSalesOrdersIdRouteImport } from './routes/_app/sales-orders
 import { Route as AppSalesOrdersNewRouteImport } from './routes/_app/sales-orders/new'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/account'
+import { Route as AppSettingsAiRouteImport } from './routes/_app/settings/ai'
 import { Route as AppSettingsAppearanceRouteImport } from './routes/_app/settings/appearance'
 import { Route as AppSettingsCategoriesRouteImport } from './routes/_app/settings/categories'
 import { Route as AppSettingsOrganizationRouteImport } from './routes/_app/settings/organization'
@@ -163,6 +164,11 @@ const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AppSettingsRouteRoute,
 } as any)
+const AppSettingsAiRoute = AppSettingsAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AppSettingsRouteRoute,
+} as any)
 const AppSettingsAppearanceRoute = AppSettingsAppearanceRouteImport.update({
   id: '/appearance',
   path: '/appearance',
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/sales-orders/new': typeof AppSalesOrdersNewRoute
   '/settings/account': typeof AppSettingsAccountRoute
+  '/settings/ai': typeof AppSettingsAiRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
   '/settings/categories': typeof AppSettingsCategoriesRoute
   '/settings/organization': typeof AppSettingsOrganizationRoute
@@ -300,6 +307,7 @@ export interface FileRoutesByTo {
   '/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/sales-orders/new': typeof AppSalesOrdersNewRoute
   '/settings/account': typeof AppSettingsAccountRoute
+  '/settings/ai': typeof AppSettingsAiRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
   '/settings/categories': typeof AppSettingsCategoriesRoute
   '/settings/organization': typeof AppSettingsOrganizationRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/_app/sales-orders/$id': typeof AppSalesOrdersIdRoute
   '/_app/sales-orders/new': typeof AppSalesOrdersNewRoute
   '/_app/settings/account': typeof AppSettingsAccountRoute
+  '/_app/settings/ai': typeof AppSettingsAiRoute
   '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
   '/_app/settings/categories': typeof AppSettingsCategoriesRoute
   '/_app/settings/organization': typeof AppSettingsOrganizationRoute
@@ -384,6 +393,7 @@ export interface FileRouteTypes {
     | '/sales-orders/$id'
     | '/sales-orders/new'
     | '/settings/account'
+    | '/settings/ai'
     | '/settings/appearance'
     | '/settings/categories'
     | '/settings/organization'
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
     | '/sales-orders/$id'
     | '/sales-orders/new'
     | '/settings/account'
+    | '/settings/ai'
     | '/settings/appearance'
     | '/settings/categories'
     | '/settings/organization'
@@ -463,6 +474,7 @@ export interface FileRouteTypes {
     | '/_app/sales-orders/$id'
     | '/_app/sales-orders/new'
     | '/_app/settings/account'
+    | '/_app/settings/ai'
     | '/_app/settings/appearance'
     | '/_app/settings/categories'
     | '/_app/settings/organization'
@@ -654,6 +666,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsAccountRouteImport
       parentRoute: typeof AppSettingsRouteRoute
     }
+    '/_app/settings/ai': {
+      id: '/_app/settings/ai'
+      path: '/ai'
+      fullPath: '/settings/ai'
+      preLoaderRoute: typeof AppSettingsAiRouteImport
+      parentRoute: typeof AppSettingsRouteRoute
+    }
     '/_app/settings/appearance': {
       id: '/_app/settings/appearance'
       path: '/appearance'
@@ -771,6 +790,7 @@ declare module '@tanstack/react-router' {
 
 interface AppSettingsRouteRouteChildren {
   AppSettingsAccountRoute: typeof AppSettingsAccountRoute
+  AppSettingsAiRoute: typeof AppSettingsAiRoute
   AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
   AppSettingsCategoriesRoute: typeof AppSettingsCategoriesRoute
   AppSettingsOrganizationRoute: typeof AppSettingsOrganizationRoute
@@ -783,6 +803,7 @@ interface AppSettingsRouteRouteChildren {
 
 const AppSettingsRouteRouteChildren: AppSettingsRouteRouteChildren = {
   AppSettingsAccountRoute: AppSettingsAccountRoute,
+  AppSettingsAiRoute: AppSettingsAiRoute,
   AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
   AppSettingsCategoriesRoute: AppSettingsCategoriesRoute,
   AppSettingsOrganizationRoute: AppSettingsOrganizationRoute,

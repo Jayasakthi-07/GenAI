@@ -1,6 +1,16 @@
 import type { Permission } from '@stockroom/shared';
 import { createFileRoute, Link, Outlet } from '@tanstack/react-router';
-import { Building2, FolderTree, ListChecks, Palette, Ruler, UserRound, Users, Warehouse } from 'lucide-react';
+import {
+  Building2,
+  FolderTree,
+  ListChecks,
+  Palette,
+  Ruler,
+  Sparkles,
+  UserRound,
+  Users,
+  Warehouse,
+} from 'lucide-react';
 import { Page, PageHeader } from '@/components/layout/page-header';
 import { useCan } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -30,6 +40,7 @@ const GROUPS: Array<{ label: string; sections: Section[] }> = [
     sections: [
       { to: '/settings/organization', label: 'Organization', icon: Building2 },
       { to: '/settings/users', label: 'Users & roles', icon: Users, permission: 'users.manage' },
+      { to: '/settings/ai', label: 'AI & models', icon: Sparkles, permission: 'agents.configure' },
     ],
   },
   {

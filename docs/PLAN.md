@@ -1251,11 +1251,20 @@ Conventions:
 
 ### Phase 3 — LLM gateway
 
-- [ ] Types, registry, adapters (Ollama, OpenAI-compatible + presets, Gemini native, Mock), schema sanitizer, thinking splitter
-- [ ] Encrypted keys, provider CRUD, test connection, health states, live model discovery and caching, capability probe
-- [ ] Router: default, per-agent, fallback chain, prefer local; retry/backoff/jitter; budgets (RPM, concurrency, daily); `LlmCall` log
-- [ ] AI & models settings page (provider cards, Ollama live card polling every 10 s, model browser, latency test, routing config, usage analytics); model chip in the top bar
-- [ ] Adapter tests with mocked HTTP; manual check against real Ollama plus any keys provided; commit
+- [x] Types, registry, adapters (Ollama, OpenAI-compatible + presets, Gemini native, Mock), schema sanitizer, thinking splitter
+- [x] Encrypted keys, provider CRUD, test connection, health states, live model discovery and caching, capability probe
+- [x] Router: default, per-agent, fallback chain, prefer local; retry/backoff/jitter; budgets (RPM, concurrency, daily); `LlmCall` log
+- [x] AI & models settings page (provider cards, Ollama live card polling every 10 s, model browser, latency test, routing config, usage analytics); model chip in the top bar
+- [x] Adapter tests with mocked HTTP; manual check against real Ollama plus any keys provided; commit
+
+**Phase 3 decisions:**
+
+- `@google/genai` 2.31: function declarations use `parametersJsonSchema` (still sanitized); assistant turns keep the raw model `Content` in `ChatMessage.providerData` so thought signatures are replayed on later turns.
+- The gateway takes a request builder per resolved model (`RequestBuilder`), so the agent runtime can use native tools for one model and the JSON protocol for the next in the same fallback chain.
+- With nothing configured, routing picks the first tool-capable local model (preferring the preset suggestion `qwen3:8b`), else a keyed cloud provider's suggested model. The status endpoint reports `RULE_BASED` when the chosen provider is known offline or keyless.
+- Provider rows are created on first boot from presets; a key in `.env` enables its provider and is used until a key is saved in the UI (which wins). Mock is a provider (disabled by default) for tests and demos.
+- Permissions: providers and keys are admin-only (`ai.configure`); models, routing, probes, latency tests and usage are manager-level (`agents.configure`); the model chip status is visible to everyone.
+- Verified against real Ollama 0.34.4 (qwen3 4b/8b/14b): discovery with capabilities and loaded models, tool-call probe, latency test (55 ms first token once loaded). No cloud keys were provided, so cloud adapters are covered by mocked-HTTP tests only.
 
 ### Phase 4 — Agent runtime
 

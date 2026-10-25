@@ -14,6 +14,7 @@ const arg = (name, fallback) =>
 const base = arg('base', 'http://127.0.0.1:5173');
 const out = resolve(import.meta.dirname, '..', arg('out', 'data/screens'));
 const only = arg('only', '')?.split(',').filter(Boolean);
+const as = arg('as', 'manager');
 mkdirSync(out, { recursive: true });
 
 const WIDTHS = [
@@ -48,6 +49,7 @@ const PAGES = [
   { key: 'customers', path: '/customers' },
   { key: 'audit', path: '/audit' },
   { key: 'settings-organization', path: '/settings/organization', full: true },
+  { key: 'settings-ai', path: '/settings/ai', full: true },
   { key: 'settings-warehouses', path: '/settings/warehouses' },
   { key: 'settings-categories', path: '/settings/categories' },
   { key: 'settings-appearance', path: '/settings/appearance' },
@@ -78,6 +80,17 @@ let ids = null;
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const problems = [];
 try {
+  // Sign in once and reuse the session (sign-in is rate-limited).
+  const authContext = await browser.newContext();
+  const login = await authContext.request.post(`${base}/api/v1/auth/login`, {
+    data: { email: `${as}@kaveri.example`, password: 'stockroom2026' },
+    headers: { origin: base },
+  });
+  if (!login.ok()) throw new Error(`Login failed: ${login.status()} ${await login.text()}`);
+  const storageState = await authContext.storageState();
+  ids = await resolveIds(authContext.request);
+  await authContext.close();
+
   for (const theme of THEMES) {
     for (const size of WIDTHS) {
       const context = await browser.newContext({
@@ -87,13 +100,8 @@ try {
         isMobile: !!size.mobile,
         hasTouch: !!size.mobile,
         reducedMotion: 'reduce',
+        storageState,
       });
-      const login = await context.request.post(`${base}/api/v1/auth/login`, {
-        data: { email: 'manager@kaveri.example', password: 'stockroom2026' },
-        headers: { origin: base },
-      });
-      if (!login.ok()) throw new Error(`Login failed: ${login.status()} ${await login.text()}`);
-      ids ??= await resolveIds(context.request);
 
       for (const page of PAGES) {
         if (only.length && !only.includes(page.key)) continue;

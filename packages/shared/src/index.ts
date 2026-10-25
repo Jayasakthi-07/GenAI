@@ -14,3 +14,4 @@ export * from './schemas/dashboard';
 export * from './schemas/system';
 export * from './schemas/settings';
 export * from './schemas/search';
+export * from './schemas/ai';
