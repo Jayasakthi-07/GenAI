@@ -1,9 +1,12 @@
 import { resolve } from 'node:path';
+import { agentModuleMap } from '../agents/definitions';
 import { LlmGateway } from '../ai/gateway/gateway';
 import { ProviderRegistry } from '../ai/gateway/registry';
 import { type Env, findRepoRoot } from '../config/env';
 import type { Db } from '../db/client';
 import type { EventBus } from '../domain/events';
+import { ActionService } from './action.service';
+import { AgentService } from './agent.service';
 import { AiService } from './ai.service';
 import { AlertService } from './alert.service';
 import { AuditService } from './audit.service';
@@ -12,6 +15,7 @@ import { CatalogService } from './catalog.service';
 import { CycleCountService } from './cycle-count.service';
 import { DashboardService } from './dashboard.service';
 import { InventoryService } from './inventory.service';
+import { PlanningService } from './planning.service';
 import { ProductService } from './product.service';
 import { PurchaseOrderService } from './purchase-order.service';
 import { SalesService } from './sales.service';
@@ -36,23 +40,32 @@ export function createServices({ prisma, bus, env }: ServiceDeps) {
   const suppliers = new SupplierService(prisma, bus);
   const registry = new ProviderRegistry(prisma, env);
   const gateway = new LlmGateway(prisma, registry, bus);
+  const products = new ProductService(prisma, bus, catalog, uploadsDir());
+  const purchaseOrders = new PurchaseOrderService(prisma, bus, inventory);
+  const transfers = new TransferService(prisma, bus, inventory);
+  const cycleCounts = new CycleCountService(prisma, bus, inventory, catalog);
   const services = {
     ai: new AiService(prisma, bus, gateway, registry),
+    /** The model router, for the agent runtime. */
+    llm: gateway,
     auth: new AuthService(prisma, bus, env.SESSION_TTL_HOURS),
     users: new UserService(prisma),
     dashboard: new DashboardService(prisma),
     inventory,
     catalog,
-    products: new ProductService(prisma, bus, catalog, uploadsDir()),
+    products,
     suppliers,
-    purchaseOrders: new PurchaseOrderService(prisma, bus, inventory),
+    purchaseOrders,
     sales: new SalesService(prisma, bus, inventory),
-    transfers: new TransferService(prisma, bus, inventory),
-    cycleCounts: new CycleCountService(prisma, bus, inventory, catalog),
+    transfers,
+    cycleCounts,
     alerts: new AlertService(prisma, bus),
     audit: new AuditService(prisma),
     settings: new SettingsService(prisma, bus),
     search: new SearchService(prisma),
+    planning: new PlanningService(prisma),
+    agents: new AgentService(prisma, bus, agentModuleMap()),
+    actions: new ActionService(prisma, bus, { purchaseOrders, transfers, products, cycleCounts, suppliers }),
   };
   // Supplier scores are derived from purchase orders and receipts.
   bus.on('po.status_changed', () => suppliers.invalidateScores());

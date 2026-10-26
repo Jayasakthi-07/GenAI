@@ -26,7 +26,12 @@ export class LlmError extends Error {
   constructor(
     readonly code: LlmErrorCode,
     message: string,
-    readonly options: { status?: number; retryAfterMs?: number; providerKey?: string } = {},
+    readonly options: {
+      status?: number;
+      retryAfterMs?: number;
+      providerKey?: string;
+      lastCode?: LlmErrorCode;
+    } = {},
   ) {
     super(message);
     this.name = 'LlmError';

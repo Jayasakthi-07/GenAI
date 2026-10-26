@@ -74,6 +74,24 @@ export const queryKeys = {
     list: (q: object) => ['audit', 'list', q] as const,
     facets: ['audit', 'facets'] as const,
   },
+  agents: {
+    all: ['agents'] as const,
+    list: ['agents', 'list'] as const,
+    detail: (key: string) => ['agents', 'detail', key] as const,
+    graph: ['agents', 'graph'] as const,
+  },
+  runs: {
+    all: ['agent-runs'] as const,
+    list: (q: object) => ['agent-runs', 'list', q] as const,
+    active: ['agent-runs', 'active'] as const,
+    detail: (id: string) => ['agent-runs', 'detail', id] as const,
+  },
+  actions: {
+    all: ['actions'] as const,
+    list: (q: object) => ['actions', 'list', q] as const,
+    counts: ['actions', 'counts'] as const,
+    detail: (id: string) => ['actions', 'detail', id] as const,
+  },
 };
 
 /**

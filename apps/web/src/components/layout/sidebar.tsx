@@ -1,6 +1,7 @@
 import { APP_VERSION } from '@stockroom/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
+import { actionCountsQuery } from '@/features/agents/api';
 import { alertCountsQuery } from '@/features/alerts/api';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useCan } from '@/lib/auth';
@@ -47,6 +48,7 @@ function NavLink({
       />
       {!collapsed && <span className="truncate">{item.label}</span>}
       {item.badge === 'alerts' && <AlertsBadge collapsed={collapsed} />}
+      {item.badge === 'approvals' && <ApprovalsBadge collapsed={collapsed} />}
     </Link>
   );
   return collapsed ? (
@@ -55,6 +57,26 @@ function NavLink({
     </Tooltip>
   ) : (
     link
+  );
+}
+
+/** Proposals waiting for a decision; hidden when there are none. */
+function ApprovalsBadge({ collapsed }: { collapsed: boolean }) {
+  const { data } = useQuery(actionCountsQuery);
+  const n = data?.pending ?? 0;
+  if (!n) return null;
+  return collapsed ? (
+    <span
+      className="absolute top-1 right-1.5 size-2 rounded-full bg-accent ring-2 ring-[var(--material-solid)]"
+      aria-label={`${n} proposals awaiting approval`}
+    />
+  ) : (
+    <span
+      className="ml-auto rounded-full bg-accent-soft px-1.5 tabular text-xs font-semibold text-accent-text"
+      aria-label={`${n} proposals awaiting approval`}
+    >
+      {n > 99 ? '99+' : n}
+    </span>
   );
 }
 

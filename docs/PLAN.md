@@ -1268,12 +1268,25 @@ Conventions:
 
 ### Phase 4 — Agent runtime
 
-- [ ] Tool registry (Zod → JSON Schema), loop (native tools + JSON protocol), limits, run recorder, thinking capture
-- [ ] pg-boss queues (singleton per agent), cron schedules, event triggers with debounce, orchestrator, restart recovery
-- [ ] SSE hub + client invalidation map; live agent indicator
-- [ ] Proposals (`ActionService`), dedupe, autonomy gating, executors; approvals inbox (reasoning, data used, impact; approve, edit-and-approve, reject with reason); feedback loop into context
-- [ ] Agents hub (cards, enable/disable, run now, edit prompt/schedule/autonomy/model/limits, run history, run timeline, live run view, network view)
-- [ ] Agent-loop tests with the Mock provider (tool call → proposal → approval → execution); commit
+- [x] Tool registry (Zod → JSON Schema), loop (native tools + JSON protocol), limits, run recorder, thinking capture
+- [x] pg-boss queues (singleton per agent), cron schedules, event triggers with debounce, orchestrator, restart recovery
+- [x] SSE hub + client invalidation map; live agent indicator
+- [x] Proposals (`ActionService`), dedupe, autonomy gating, executors; approvals inbox (reasoning, data used, impact; approve, edit-and-approve, reject with reason); feedback loop into context
+- [x] Agents hub (cards, enable/disable, run now, edit prompt/schedule/autonomy/model/limits, run history, run timeline, live run view, network view)
+- [x] Agent-loop tests with the Mock provider (tool call → proposal → approval → execution); commit
+
+**Phase 4 decisions:**
+
+- Agents shipped in this phase: **Stock Sentinel** and **Replenishment Planner** (the hand-off pair the runtime needs end to end). The other five agents arrive in Phase 5 on the same runtime; the hub only lists agents that exist. The planner's replenishment maths (`analytics/replenishment.ts`: Φ⁻¹, SS, ROP, EOQ, order-up-to, MOQ/pack rounding, weighted supplier choice, budget fill) landed here with tests because proposals need real quantities; Phase 5 adds forecasts, which the planner already prefers over history when present.
+- The Stock Sentinel's analyzer keeps alert facts in sync on every run (deterministic create/update/auto-resolve), replacing the interim stock watcher. The model is consulted only for issues that are new, changed severity, or still have a rule explanation, and it may re-rank priority within ±10.
+- pg-boss 12: one `stately` queue per agent (one queued + one running), `retryLimit: 0` because retries and fallback already happen in the gateway and a failed run is recorded, not replayed. Crons go through a dispatcher queue (`agent.cron`) so every run has an `AgentRun` row before it starts; schedule keys are `<agent>.<n>`. Event triggers are debounced in process. At boot, `RUNNING` runs become `FAILED` ("Interrupted by a restart") and `QUEUED` runs older than 10 minutes are cancelled.
+- Output tools (`publish_alerts`, …) were folded into each agent's validated final JSON: it is more reliable with small local models and still schema-checked, with one repair attempt before falling back to rules.
+- Tools accept ids, codes (SKU, warehouse, supplier) or exact names, because small models copy short codes and names far more reliably than UUIDs. Only read tools count as "data used" citations.
+- Prompt examples use `<placeholders>` and a common rule forbids adding up or recomputing amounts: with literal examples qwen3:8b copied an example finding verbatim and invented a total. AI run summaries get a code-generated proposal count appended.
+- Proposals: one open proposal per dedupe key (PO per supplier + warehouse, transfer per route, one per product for settings), a product can't sit in two open PO proposals for the same warehouse, rejected proposals are not repeated for 72 hours, pending ones expire after 7 days. Approving executes as the agent on behalf of the approver; a PO that needs approval is approved by the same decision when the approver may approve POs. Markdowns can't go below cost.
+- SSE: `GET /api/v1/events` streams domain events (ids and statuses only; notifications only to their recipient). The web app batches invalidations (one map in `lib/live.ts`) and refetches everything after a reconnect.
+- The provider registry now rebuilds an adapter only when its configuration changes, not on health updates (which also reset its rate-limit budget).
+- Verified with real Ollama (qwen3:8b): Sentinel explained alerts and handed 11 products to the planner, which recovered from a validation error and proposed 3 POs. Sentinel run time fell from 144 s to 56 s after the prompt changes. `pnpm qa:screens` covers the new pages.
 
 ### Phase 5 — Analytics and agents
 

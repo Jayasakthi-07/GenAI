@@ -449,6 +449,35 @@ export class ProductService {
     return this.get(id);
   }
 
+  /** A price change on its own (markdowns). Never below cost or above MRP. */
+  async setSellingPrice(actor: Actor, id: string, price: string, reason: string): Promise<ProductDetail> {
+    assertCan(actor, 'catalog.manage');
+    await inTransaction(this.prisma, this.bus, async (tx, emit) => {
+      const before = await tx.product.findUnique({ where: { id } });
+      if (!before) throw notFound('Product');
+      const next = new Prisma.Decimal(price);
+      if (next.lt(before.costPrice))
+        throw new AppError('VALIDATION_ERROR', 'The price can’t be below the cost price.', {
+          fields: { sellingPrice: 'Below cost' },
+        });
+      if (before.mrp && next.gt(before.mrp))
+        throw new AppError('VALIDATION_ERROR', 'The price can’t be above the MRP.', {
+          fields: { sellingPrice: 'Above MRP' },
+        });
+      await tx.product.update({ where: { id }, data: { sellingPrice: next } });
+      await writeAudit(tx, actor, {
+        action: 'product.price',
+        entityType: 'Product',
+        entityId: id,
+        summary: `Changed the price of ${before.name} from ₹${money(before.sellingPrice)} to ₹${money(next)}: ${reason}`,
+        before: { sellingPrice: money(before.sellingPrice) },
+        after: { sellingPrice: money(next), reason },
+      });
+      emit('catalog.changed', { entity: 'product', id });
+    });
+    return this.get(id);
+  }
+
   /** Per-warehouse replenishment parameters (reorder point, safety stock, max stock). */
   async updateStockParams(
     actor: Actor,

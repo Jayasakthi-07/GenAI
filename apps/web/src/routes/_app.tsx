@@ -8,6 +8,7 @@ import { TopBar } from '@/components/layout/top-bar';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ApiError } from '@/lib/api';
 import { meQueryOptions, useLogout, useMe, useSavePreferences } from '@/lib/auth';
+import { useLiveEvents } from '@/lib/live';
 import { usePreferences } from '@/lib/preferences';
 
 export const Route = createFileRoute('/_app')({
@@ -34,6 +35,7 @@ function AppLayout() {
   const logout = useLogout();
   const [menuOpen, setMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  useLiveEvents();
 
   // The signed-in user's saved preferences win (they follow the user across browsers).
   useEffect(() => {

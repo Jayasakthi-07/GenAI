@@ -4,6 +4,7 @@ import { Info, LogOut, Menu, Monitor, Moon, Search, Settings, Sun, UserRound } f
 import { useMe } from '@/lib/auth';
 import { type ThemePreference, usePreferences } from '@/lib/preferences';
 import { cn, modKey } from '@/lib/utils';
+import { AgentActivity } from '../ai/agent-activity';
 import { ModelChip } from '../ai/model-chip';
 import { IconButton } from '../ui/button';
 import {
@@ -65,6 +66,7 @@ export function TopBar({ onOpenMenu, onOpenPalette, onSignOut }: TopBarProps) {
           <Search strokeWidth={1.75} />
         </IconButton>
 
+        <AgentActivity />
         <ModelChip />
 
         <DropdownMenu>

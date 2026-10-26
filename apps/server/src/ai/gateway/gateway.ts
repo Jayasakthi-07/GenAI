@@ -319,6 +319,7 @@ export class LlmGateway {
     }
     throw new LlmError('no_model', `No model could answer. Last error: ${last?.message ?? 'unknown'}`, {
       providerKey: last?.options.providerKey,
+      lastCode: last?.code,
     });
   }
 
@@ -391,6 +392,8 @@ export class LlmGateway {
       }
       if (ctx.only) break;
     }
-    throw new LlmError('no_model', `No model could answer. Last error: ${last?.message ?? 'unknown'}`);
+    throw new LlmError('no_model', `No model could answer. Last error: ${last?.message ?? 'unknown'}`, {
+      lastCode: last?.code,
+    });
   }
 }

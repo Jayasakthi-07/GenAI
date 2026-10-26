@@ -86,7 +86,17 @@ export class ProviderRegistry {
     const seen = new Set<string>();
     for (const row of rows) {
       seen.add(row.key);
-      const stamp = `${row.updatedAt.getTime()}`;
+      // Rebuild the adapter only when its configuration changes, not on health updates
+      // (which would also reset its rate-limit budget).
+      const stamp = JSON.stringify([
+        row.kind,
+        row.displayName,
+        row.baseUrl,
+        row.isEnabled,
+        row.settings,
+        row.apiKeyCiphertext,
+        row.extraHeadersCiphertext,
+      ]);
       const cached = this.entries.get(row.key);
       if (cached?.stamp === stamp) continue;
       const preset = presetFor(row.key);

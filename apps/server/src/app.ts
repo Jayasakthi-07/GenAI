@@ -16,16 +16,20 @@ import {
   validatorCompiler,
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
+import { AGENT_MODULES } from './agents/definitions';
+import { AgentOrchestrator } from './agents/orchestrator';
 import { type Env, findRepoRoot } from './config/env';
 import type { Db } from './db/client';
 import { EventBus } from './domain/events';
 import { authPlugin } from './http/plugins/auth';
 import { errorsPlugin } from './http/plugins/errors';
+import { agentRoutes } from './http/routes/agents';
 import { aiRoutes } from './http/routes/ai';
 import { alertRoutes } from './http/routes/alerts';
 import { authRoutes } from './http/routes/auth';
 import { catalogRoutes } from './http/routes/catalog';
 import { dashboardRoutes, meRoutes } from './http/routes/dashboard';
+import { eventRoutes } from './http/routes/events';
 import { operationsRoutes } from './http/routes/operations';
 import { productRoutes } from './http/routes/products';
 import { purchasingRoutes } from './http/routes/purchasing';
@@ -41,15 +45,25 @@ export interface BuildAppOptions {
   logger?: FastifyServerOptions['logger'];
   /** Serve the built SPA from apps/web/dist (production). */
   serveWeb?: boolean;
+  /** Start the agent scheduler (pg-boss). Off in tests unless a test needs it. */
+  startAgents?: boolean;
 }
 
-export async function buildApp({ env, prisma, logger = false, serveWeb = false }: BuildAppOptions) {
+export async function buildApp({
+  env,
+  prisma,
+  logger = false,
+  serveWeb = false,
+  startAgents = false,
+}: BuildAppOptions) {
   const app = Fastify({
     logger,
     // One concise line per request is logged in onResponse below instead of Fastify's two.
     logController: new LogController({ disableRequestLogging: true }),
     bodyLimit: 10 * 1024 * 1024,
     routerOptions: { ignoreTrailingSlash: true },
+    // Event streams stay open; close them on shutdown instead of waiting.
+    forceCloseConnections: true,
   }).withTypeProvider<ZodTypeProvider>();
 
   app.setValidatorCompiler(validatorCompiler);
@@ -58,8 +72,18 @@ export async function buildApp({ env, prisma, logger = false, serveWeb = false }
   const bus = new EventBus();
   const services: Services = createServices({ prisma, bus, env });
   await services.ai.init();
+  await services.agents.ensureDefinitions();
+  const orchestrator = new AgentOrchestrator({
+    env,
+    bus,
+    services,
+    gateway: services.llm,
+    log: app.log,
+    modules: AGENT_MODULES,
+  });
   app.decorate('services', services);
   app.decorate('bus', bus);
+  app.decorate('orchestrator', orchestrator);
 
   // One concise line per API request instead of Fastify's two verbose ones.
   app.addHook('onResponse', async (request, reply) => {
@@ -140,6 +164,8 @@ export async function buildApp({ env, prisma, logger = false, serveWeb = false }
       await api.register(alertRoutes, { services });
       await api.register(settingsRoutes, { services });
       await api.register(aiRoutes, { services });
+      await api.register(agentRoutes, { services, orchestrator });
+      await api.register(eventRoutes, { bus });
     },
     { prefix: API_PREFIX },
   );
@@ -165,6 +191,12 @@ export async function buildApp({ env, prisma, logger = false, serveWeb = false }
     await app.register(fastifyStatic, { root: webDist, wildcard: false, index: 'index.html' });
   }
 
+  if (startAgents) {
+    // Agents replace the interim stock watcher: the Stock Sentinel runs at startup and on its triggers.
+    await orchestrator.start({ startupRuns: ['stock_sentinel'] });
+    app.addHook('onClose', () => orchestrator.stop());
+  }
+
   return app;
 }
 
@@ -172,6 +204,7 @@ declare module 'fastify' {
   interface FastifyInstance {
     services: Services;
     bus: EventBus;
+    orchestrator: AgentOrchestrator;
   }
 }
 

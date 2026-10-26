@@ -23,7 +23,7 @@ const WIDTHS = [
   { name: '390', width: 390, height: 844, mobile: true },
 ];
 const THEMES = ['light', 'dark'];
-/** `path` may use :product, :po, :so, :supplier, :transfer and :count, resolved from the API once. */
+/** `path` may use :product, :po, :so, :supplier, :transfer, :count, :run and :action, resolved from the API once. */
 const PAGES = [
   { key: 'login', path: '/login', auth: false },
   { key: 'dashboard', path: '/', full: true },
@@ -47,6 +47,14 @@ const PAGES = [
   { key: 'sales-orders', path: '/sales-orders' },
   { key: 'sales-order', path: '/sales-orders/:so' },
   { key: 'customers', path: '/customers' },
+  { key: 'agents', path: '/agents' },
+  { key: 'agents-activity', path: '/agents?tab=activity' },
+  { key: 'agents-network', path: '/agents?tab=network' },
+  { key: 'agent', path: '/agents/stock_sentinel', full: true },
+  { key: 'agent-settings', path: '/agents/replenishment_planner?tab=settings', full: true },
+  { key: 'agent-run', path: '/agents/runs/:run', full: true },
+  { key: 'approvals', path: '/approvals' },
+  { key: 'approval', path: '/approvals?id=:action', full: true },
   { key: 'audit', path: '/audit' },
   { key: 'settings-organization', path: '/settings/organization', full: true },
   { key: 'settings-ai', path: '/settings/ai', full: true },
@@ -73,6 +81,8 @@ async function resolveIds(request) {
     supplier: await first('/suppliers?pageSize=1&sort=score:asc'),
     transfer: await first('/transfers?pageSize=1'),
     count: await first('/cycle-counts?pageSize=1'),
+    run: await first('/agent-runs?pageSize=1&status=SUCCEEDED&agentKey=replenishment_planner'),
+    action: await first('/actions?pageSize=1&status=PENDING'),
   };
 }
 let ids = null;
@@ -102,6 +112,8 @@ try {
         reducedMotion: 'reduce',
         storageState,
       });
+      // The live event stream never goes idle; 204 tells EventSource to stop instead of reconnecting.
+      await context.route('**/api/v1/events', (route) => route.fulfill({ status: 204 }));
 
       for (const page of PAGES) {
         if (only.length && !only.includes(page.key)) continue;

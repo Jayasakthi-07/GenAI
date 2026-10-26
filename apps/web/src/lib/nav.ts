@@ -2,10 +2,12 @@ import type { Permission } from '@stockroom/shared';
 import {
   ArrowLeftRight,
   Bell,
+  Bot,
   Boxes,
   ClipboardCheck,
   Factory,
   History,
+  Inbox,
   Info,
   LayoutDashboard,
   Package,
@@ -25,7 +27,7 @@ export interface NavItem {
   /** Extra words for the command palette. */
   keywords?: string[];
   /** Live count shown next to the label. */
-  badge?: 'alerts';
+  badge?: 'alerts' | 'approvals';
 }
 
 export interface NavGroup {
@@ -34,8 +36,8 @@ export interface NavGroup {
 }
 
 /**
- * Sidebar navigation. Only pages that exist are listed; AI Agents and the remaining Insights
- * pages are added here as their phases ship.
+ * Sidebar navigation. Only pages that exist are listed; the remaining Insights pages are added
+ * here as their phases ship.
  */
 export const NAV: NavGroup[] = [
   {
@@ -97,6 +99,24 @@ export const NAV: NavGroup[] = [
         keywords: ['so', 'orders', 'fulfil', 'ship'],
       },
       { label: 'Customers', to: '/customers', icon: Users, keywords: ['clients', 'buyers'] },
+    ],
+  },
+  {
+    label: 'Agents',
+    items: [
+      {
+        label: 'Agents',
+        to: '/agents',
+        icon: Bot,
+        keywords: ['ai', 'automation', 'runs', 'sentinel', 'planner', 'schedule', 'autonomy'],
+      },
+      {
+        label: 'Approvals',
+        to: '/approvals',
+        icon: Inbox,
+        keywords: ['proposals', 'inbox', 'approve', 'reject', 'decisions'],
+        badge: 'approvals',
+      },
     ],
   },
   {

@@ -345,6 +345,35 @@ export class SupplierService {
     return this.catalog(supplierId);
   }
 
+  /** Makes an existing, active catalog link the product's preferred source. */
+  async setPreferred(actor: Actor, productId: string, supplierId: string): Promise<void> {
+    assertCan(actor, 'suppliers.manage');
+    await inTransaction(this.prisma, this.bus, async (tx, emit) => {
+      const link = await tx.supplierProduct.findUnique({
+        where: { supplierId_productId: { supplierId, productId } },
+        include: {
+          supplier: { select: { name: true, isActive: true } },
+          product: { select: { name: true, preferredSupplierId: true } },
+        },
+      });
+      if (!link?.isActive || !link.supplier.isActive)
+        throw new AppError('VALIDATION_ERROR', 'That supplier doesn’t actively supply this product.');
+      await tx.product.update({
+        where: { id: productId },
+        data: { preferredSupplierId: supplierId, leadTimeDays: link.leadTimeDays },
+      });
+      await writeAudit(tx, actor, {
+        action: 'product.preferred_supplier',
+        entityType: 'Product',
+        entityId: productId,
+        summary: `${link.supplier.name} is now the preferred supplier for ${link.product.name}`,
+        before: { preferredSupplierId: link.product.preferredSupplierId },
+        after: { preferredSupplierId: supplierId },
+      });
+      emit('catalog.changed', { entity: 'product', id: productId });
+    });
+  }
+
   async removeCatalogItem(actor: Actor, supplierId: string, linkId: string): Promise<SupplierProduct[]> {
     assertCan(actor, 'suppliers.manage');
     await inTransaction(this.prisma, this.bus, async (tx, emit) => {

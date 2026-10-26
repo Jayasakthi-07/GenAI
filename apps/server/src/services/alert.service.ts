@@ -251,8 +251,75 @@ export class AlertService {
     const settings = await getOrgSettings(this.prisma);
     const today = localDay(new Date(), settings.timezone);
     const findings = await this.analyze(today, settings);
+    const result = await this.syncStockFindings(actor, runId, findings);
+    return {
+      created: result.created,
+      updated: result.updated,
+      resolved: result.resolved,
+      findings: findings.length,
+      durationMs: Math.round(performance.now() - started),
+      list: findings,
+    };
+  }
 
-    const result = await inTransaction(this.prisma, this.bus, async (tx, emit) => {
+  /** Open stock alerts by dedupe key: what the Stock Sentinel compares against. */
+  async stockAlertState(): Promise<
+    Map<string, { id: string; severity: Severity; explanationSource: 'AI' | 'RULE' }>
+  > {
+    const rows = await this.prisma.alert.findMany({
+      where: { type: { in: [...STOCK_TYPES] }, status: { in: [...OPEN_STATUSES] } },
+      select: { id: true, dedupeKey: true, severity: true, explanationSource: true },
+    });
+    return new Map(rows.map((r) => [r.dedupeKey, r]));
+  }
+
+  /** AI explanations (and bounded re-ranking) for alerts the Stock Sentinel's model reviewed. */
+  async applyExplanations(
+    actor: Actor,
+    items: Array<{ dedupeKey: string; explanation: string; priority?: number }>,
+    modelUsed: string,
+  ): Promise<number> {
+    if (!items.length) return 0;
+    return inTransaction(this.prisma, this.bus, async (tx, emit) => {
+      const open = await tx.alert.findMany({
+        where: { dedupeKey: { in: items.map((i) => i.dedupeKey) }, status: { in: [...OPEN_STATUSES] } },
+        select: { id: true, dedupeKey: true, priority: true, status: true },
+      });
+      const byKey = new Map(open.map((a) => [a.dedupeKey, a]));
+      let n = 0;
+      for (const item of items) {
+        const a = byKey.get(item.dedupeKey);
+        if (!a) continue;
+        // The model may re-rank within ±10 of the deterministic priority, never beyond.
+        const priority =
+          item.priority === undefined
+            ? a.priority
+            : Math.max(a.priority - 10, Math.min(a.priority + 10, item.priority));
+        await tx.alert.update({
+          where: { id: a.id },
+          data: { explanation: item.explanation.trim(), explanationSource: 'AI', modelUsed, priority },
+        });
+        emit('alert.updated', { alertId: a.id, status: a.status });
+        n++;
+      }
+      if (n)
+        await writeAudit(tx, actor, {
+          action: 'alerts.explain',
+          entityType: 'Alert',
+          summary: `Explained ${n} stock alert${n === 1 ? '' : 's'}`,
+          after: { keys: items.map((i) => i.dedupeKey), modelUsed },
+        });
+      return n;
+    });
+  }
+
+  /** Creates, updates and auto-resolves stock alerts so they match the findings exactly. */
+  async syncStockFindings(
+    actor: Actor,
+    runId: string | null,
+    findings: Finding[],
+  ): Promise<{ created: number; updated: number; resolved: number; createdKeys: string[] }> {
+    return inTransaction(this.prisma, this.bus, async (tx, emit) => {
       const open = await tx.alert.findMany({
         where: { type: { in: [...STOCK_TYPES] }, status: { in: [...OPEN_STATUSES] } },
         select: {
@@ -269,6 +336,7 @@ export class AlertService {
       const seen = new Set<string>();
       let created = 0;
       let updated = 0;
+      const createdKeys: string[] = [];
       for (const f of findings) {
         seen.add(f.dedupeKey);
         const existing = byKey.get(f.dedupeKey);
@@ -308,6 +376,7 @@ export class AlertService {
           });
           emit('alert.created', { alertId: alert.id, type: f.type, severity: f.severity });
           created++;
+          createdKeys.push(f.dedupeKey);
         }
       }
       const cleared = open.filter((a) => !seen.has(a.dedupeKey));
@@ -332,14 +401,8 @@ export class AlertService {
           after: { created, updated, resolved: cleared.length, findings: findings.length },
         });
       }
-      return { created, updated, resolved: cleared.length };
+      return { created, updated, resolved: cleared.length, createdKeys };
     });
-    return {
-      ...result,
-      findings: findings.length,
-      durationMs: Math.round(performance.now() - started),
-      list: findings,
-    };
   }
 
   /** Deterministic findings for today (no writes). */
