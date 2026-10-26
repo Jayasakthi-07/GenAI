@@ -25,6 +25,7 @@ import { authPlugin } from './http/plugins/auth';
 import { errorsPlugin } from './http/plugins/errors';
 import { agentRoutes } from './http/routes/agents';
 import { aiRoutes } from './http/routes/ai';
+import { assistantRoutes } from './http/routes/assistant';
 import { alertRoutes } from './http/routes/alerts';
 import { authRoutes } from './http/routes/auth';
 import { catalogRoutes } from './http/routes/catalog';
@@ -32,6 +33,7 @@ import { dashboardRoutes, meRoutes } from './http/routes/dashboard';
 import { eventRoutes } from './http/routes/events';
 import { operationsRoutes } from './http/routes/operations';
 import { productRoutes } from './http/routes/products';
+import { reportRoutes } from './http/routes/reports';
 import { purchasingRoutes } from './http/routes/purchasing';
 import { salesRoutes } from './http/routes/sales';
 import { settingsRoutes } from './http/routes/settings';
@@ -166,6 +168,8 @@ export async function buildApp({
       await api.register(aiRoutes, { services });
       await api.register(agentRoutes, { services, orchestrator });
       await api.register(eventRoutes, { bus });
+      await api.register(assistantRoutes, { services });
+      await api.register(reportRoutes, { services });
     },
     { prefix: API_PREFIX },
   );

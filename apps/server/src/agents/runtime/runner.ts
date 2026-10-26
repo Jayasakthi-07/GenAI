@@ -157,11 +157,13 @@ export async function executeRun(deps: RunnerDeps, runId: string, cancel: AbortS
     }
     const mode = output ? 'AI' : 'RULE_BASED';
 
-    // 5. Rule-based proposals when the model didn't do the job.
+    // 5. Rule-based proposals when there is no model answer, or the model proposed nothing at all
+    //    (small models sometimes describe an action instead of calling the tool). People still approve.
     const observed: Array<{ type: ActionType; title: string; summary: string }> = [
       ...toolCtx.proposals.observed,
     ];
-    if (!output && analysis.ruleBased.proposals.length) {
+    const modelProposedNothing = !!output && toolCtx.proposals.created === 0 && observed.length === 0;
+    if ((!output || modelProposedNothing) && analysis.ruleBased.proposals.length) {
       let created = toolCtx.proposals.created;
       const outcomes: string[] = [];
       for (const p of analysis.ruleBased.proposals) {

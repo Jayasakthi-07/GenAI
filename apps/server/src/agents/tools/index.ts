@@ -3,10 +3,11 @@ import { z } from 'zod';
 import type { ToolSpec } from '../../ai/gateway/types';
 import { AppError } from '../../domain/errors';
 import type { ToolContext, ToolDef } from '../types';
+import { insightTools } from './insight';
 import { readTools } from './read';
 import { writeTools } from './write';
 
-const ALL: ToolDef[] = [...readTools, ...writeTools];
+const ALL: ToolDef[] = [...readTools, ...insightTools, ...writeTools];
 export const TOOLS = new Map(ALL.map((t) => [t.name, t]));
 
 /** Tool results are capped so one large answer can't crowd out the conversation. */

@@ -88,6 +88,7 @@ export function RunModeMarker({ mode, modelId }: { mode: RunMode | null; modelId
 
 /** "Every 15 minutes", "Daily at 07:00", "Mondays at 06:00", else the expression itself. */
 export function describeCron(cron: string): string {
+  if (cron.trim() === '@briefing') return 'Daily at the briefing time';
   const [min, hour, dom, mon, dow] = cron.trim().split(/\s+/);
   const every = /^\*\/(\d+)$/.exec(min ?? '');
   const rest = [hour, dom, mon, dow].every((x) => x === '*');

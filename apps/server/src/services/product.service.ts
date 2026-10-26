@@ -532,6 +532,39 @@ export class ProductService {
     return this.stock(productId);
   }
 
+  /** ABC–XYZ classes from the Inventory Optimizer, written in one transaction. */
+  async saveClassifications(
+    actor: Actor,
+    classes: Map<string, { abc: 'A' | 'B' | 'C'; xyz: 'X' | 'Y' | 'Z' }>,
+  ): Promise<number> {
+    assertCan(actor, 'inventory.view');
+    if (!classes.size) return 0;
+    const groups = new Map<string, string[]>();
+    for (const [id, c] of classes)
+      groups.set(`${c.abc}${c.xyz}`, [...(groups.get(`${c.abc}${c.xyz}`) ?? []), id]);
+    const now = new Date();
+    await inTransaction(this.prisma, this.bus, async (tx, emit) => {
+      for (const [key, ids] of groups) {
+        await tx.product.updateMany({
+          where: { id: { in: ids } },
+          data: {
+            abcClass: key[0] as 'A' | 'B' | 'C',
+            xyzClass: key[1] as 'X' | 'Y' | 'Z',
+            classifiedAt: now,
+          },
+        });
+      }
+      await writeAudit(tx, actor, {
+        action: 'product.classify',
+        entityType: 'Product',
+        summary: `Classified ${classes.size} products (ABC–XYZ)`,
+        after: Object.fromEntries([...groups].map(([k, ids]) => [k, ids.length])),
+      });
+      emit('catalog.changed', { entity: 'product' });
+    });
+    return classes.size;
+  }
+
   async bulk(actor: Actor, input: ProductBulk): Promise<number> {
     assertCan(actor, 'catalog.manage');
     return inTransaction(this.prisma, this.bus, async (tx, emit) => {

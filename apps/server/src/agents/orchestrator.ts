@@ -1,4 +1,10 @@
-import { AGENT_EVENTS, type AgentEvent, type AgentKey, type RunTrigger } from '@stockroom/shared';
+import {
+  AGENT_EVENTS,
+  type AgentEvent,
+  type AgentKey,
+  BRIEFING_CRON,
+  type RunTrigger,
+} from '@stockroom/shared';
 import type { FastifyBaseLogger } from 'fastify';
 import { type Job, PgBoss } from 'pg-boss';
 import type { LlmGateway } from '../ai/gateway/gateway';
@@ -66,7 +72,7 @@ export class AgentOrchestrator {
     const recovered = await services.agents.recoverInterrupted();
     if (recovered) log.warn({ recovered }, 'marked interrupted agent runs');
 
-    for (const m of modules) {
+    for (const m of modules.filter((x) => !x.chatOnly)) {
       await this.ensureQueue(queueOf(m.key), {
         policy: 'stately',
         retryLimit: 0,
@@ -153,6 +159,7 @@ export class AgentOrchestrator {
   }
 
   validateCron(cron: string): void {
+    if (cron === BRIEFING_CRON) return;
     try {
       this.requireBoss().previewSchedule(cron, { tz: this.tz, count: 1 });
     } catch {
@@ -178,10 +185,14 @@ export class AgentOrchestrator {
     const settings = await this.allSettings();
     const desired = new Map<string, { agentKey: AgentKey; cron: string }>();
     this.nextRuns.clear();
+    const org = await this.deps.services.planning.org();
+    const [hh = '8', mm = '0'] = org.briefingTime.split(':');
+    const briefing = `${Number(mm)} ${Number(hh)} * * *`;
     for (const [key, s] of settings) {
-      if (!s.isEnabled) continue;
+      if (!s.isEnabled || this.deps.modules.find((m) => m.key === key)?.chatOnly) continue;
       let next: Date | null = null;
-      s.triggers.cron.forEach((cron, i) => {
+      s.triggers.cron.forEach((raw, i) => {
+        const cron = raw === BRIEFING_CRON ? briefing : raw;
         try {
           const [at] = boss.previewSchedule(cron, { tz: this.tz, count: 1 });
           if (at && (!next || at < next)) next = at;
@@ -247,6 +258,11 @@ export class AgentOrchestrator {
   ): Promise<{ runId: string; deduped: boolean }> {
     const boss = this.requireBoss();
     const { agents } = this.deps.services;
+    if (agents.module(key).chatOnly)
+      throw new AppError(
+        'VALIDATION_ERROR',
+        `${agents.module(key).name} runs in chat; open the Assistant instead.`,
+      );
     const waiting = await agents.queuedRun(key);
     if (waiting) return { runId: waiting, deduped: true };
     const runId = await agents.createRun(key, trigger, detail, parentRunId);

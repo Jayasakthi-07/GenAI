@@ -99,6 +99,8 @@ export interface AgentModule<S = unknown, O extends BaseOutput = BaseOutput> {
   /** Tool names this agent may call. */
   tools: string[];
   handoffsTo: AgentKey[];
+  /** Runs only in chat (the Assistant): never scheduled or queued. */
+  chatOnly?: boolean;
   /** The final answer's schema and an example for the prompt. */
   output: z.ZodType<O>;
   outputExample: O;
@@ -126,6 +128,8 @@ export interface ToolContext extends RunContext {
     created: number;
     observed: Array<{ type: ActionType; title: string; summary: string }>;
   };
+  /** In chat, write tools draft a confirmation card for the person instead of a proposal. */
+  draft?: (type: ActionType, payload: unknown, rationale: string) => Promise<unknown>;
 }
 
 export type ToolKind = 'read' | 'write';

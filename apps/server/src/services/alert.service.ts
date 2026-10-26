@@ -1,6 +1,7 @@
 import type {
   Alert,
   AlertBulk,
+  AlertType,
   AlertCounts,
   AlertStatus,
   AlertsQuery,
@@ -41,6 +42,22 @@ const include = {
 } satisfies Prisma.AlertInclude;
 
 type AlertRow = Prisma.AlertGetPayload<{ include: typeof include }>;
+
+/** A condition an agent found; synced into alerts by dedupe key. */
+export interface AlertFinding {
+  type: AlertType;
+  dedupeKey: string;
+  severity: Severity;
+  priority: number;
+  title: string;
+  message: string;
+  explanation: string;
+  productId?: string | null;
+  warehouseId?: string | null;
+  supplierId?: string | null;
+  batchId?: string | null;
+  data: Record<string, unknown>;
+}
 
 export class AlertService {
   constructor(
@@ -263,11 +280,16 @@ export class AlertService {
   }
 
   /** Open stock alerts by dedupe key: what the Stock Sentinel compares against. */
-  async stockAlertState(): Promise<
-    Map<string, { id: string; severity: Severity; explanationSource: 'AI' | 'RULE' }>
-  > {
+  stockAlertState() {
+    return this.alertState([...STOCK_TYPES]);
+  }
+
+  /** Open alerts of these types by dedupe key: what an agent compares its findings against. */
+  async alertState(
+    types: AlertType[],
+  ): Promise<Map<string, { id: string; severity: Severity; explanationSource: 'AI' | 'RULE' }>> {
     const rows = await this.prisma.alert.findMany({
-      where: { type: { in: [...STOCK_TYPES] }, status: { in: [...OPEN_STATUSES] } },
+      where: { type: { in: types }, status: { in: [...OPEN_STATUSES] } },
       select: { id: true, dedupeKey: true, severity: true, explanationSource: true },
     });
     return new Map(rows.map((r) => [r.dedupeKey, r]));
@@ -319,9 +341,43 @@ export class AlertService {
     runId: string | null,
     findings: Finding[],
   ): Promise<{ created: number; updated: number; resolved: number; createdKeys: string[] }> {
+    const settings = await getOrgSettings(this.prisma);
+    return this.syncFindings(actor, runId, [...STOCK_TYPES], findings, {
+      quietHours: settings.alertDedupeHours,
+      action: 'alerts.stock_check',
+      label: 'Stock check',
+    });
+  }
+
+  /**
+   * Makes the open alerts of `scope` match `findings` exactly: creates new ones, updates changed facts,
+   * and resolves those whose condition cleared. An alert a person resolved isn't raised again for
+   * `quietHours` (the dedupe window).
+   */
+  async syncFindings(
+    actor: Actor,
+    runId: string | null,
+    scope: AlertType[],
+    findings: AlertFinding[],
+    opts: { quietHours: number; action: string; label: string },
+  ): Promise<{ created: number; updated: number; resolved: number; createdKeys: string[] }> {
+    const quiet = new Set(
+      (
+        await this.prisma.alert.findMany({
+          where: {
+            type: { in: scope },
+            status: 'RESOLVED',
+            autoResolved: false,
+            resolvedAt: { gte: new Date(Date.now() - opts.quietHours * 3_600_000) },
+            dedupeKey: { in: findings.map((f) => f.dedupeKey) },
+          },
+          select: { dedupeKey: true },
+        })
+      ).map((r) => r.dedupeKey),
+    );
     return inTransaction(this.prisma, this.bus, async (tx, emit) => {
       const open = await tx.alert.findMany({
-        where: { type: { in: [...STOCK_TYPES] }, status: { in: [...OPEN_STATUSES] } },
+        where: { type: { in: scope }, status: { in: [...OPEN_STATUSES] } },
         select: {
           id: true,
           dedupeKey: true,
@@ -359,15 +415,16 @@ export class AlertService {
           if (existing.severity !== f.severity)
             emit('alert.updated', { alertId: existing.id, status: existing.status });
           updated++;
-        } else {
+        } else if (!quiet.has(f.dedupeKey)) {
           const alert = await tx.alert.create({
             data: {
               ...fields,
               type: f.type,
               explanation: f.explanation,
               explanationSource: 'RULE',
-              productId: f.productId,
-              warehouseId: f.warehouseId,
+              productId: f.productId ?? null,
+              warehouseId: f.warehouseId ?? null,
+              supplierId: f.supplierId ?? null,
               batchId: f.batchId ?? null,
               dedupeKey: f.dedupeKey,
               agentRunId: runId,
@@ -395,9 +452,9 @@ export class AlertService {
       }
       if (created || cleared.length) {
         await writeAudit(tx, actor, {
-          action: 'alerts.stock_check',
+          action: opts.action,
           entityType: 'Alert',
-          summary: `Stock check: ${created} new, ${updated} updated, ${cleared.length} resolved`,
+          summary: `${opts.label}: ${created} new, ${updated} updated, ${cleared.length} resolved`,
           after: { created, updated, resolved: cleared.length, findings: findings.length },
         });
       }

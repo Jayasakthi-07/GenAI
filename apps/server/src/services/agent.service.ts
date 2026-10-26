@@ -208,6 +208,7 @@ export class AgentService {
       modelOverride: s.modelOverride,
       handoffsTo: m.handoffsTo,
       writes: m.tools.some((t) => t.startsWith('propose_')),
+      chatOnly: m.chatOnly ?? false,
       status: {
         running: !!running,
         queued: active.some((r) => r.status === 'QUEUED'),

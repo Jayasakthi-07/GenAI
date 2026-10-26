@@ -1290,10 +1290,23 @@ Conventions:
 
 ### Phase 5 — Analytics and agents
 
-- [ ] Pure analytics with unit tests: Holt-Winters, Croston-SBA, SES, MA, pattern classification, MAPE/WAPE; inverse normal, ROP/SS/EOQ with MOQ/pack rounding; robust z / MAD and rule checks; ABC–XYZ; supplier score
-- [ ] Each agent: analyzer, tools, prompt, output schema, rule-based fallback; runs verified with Ollama and without a model
-- [ ] Assistant: streaming chat (side panel and full page), tool use, inline tables/charts, confirmation cards, citations
-- [ ] `docs/AGENTS.md`; commit
+- [x] Pure analytics with unit tests: Holt-Winters, Croston-SBA, SES, MA, pattern classification, MAPE/WAPE; inverse normal, ROP/SS/EOQ with MOQ/pack rounding; robust z / MAD and rule checks; ABC–XYZ; supplier score
+- [x] Each agent: analyzer, tools, prompt, output schema, rule-based fallback; runs verified with Ollama and without a model
+- [x] Assistant: streaming chat (side panel and full page), tool use, inline tables/charts, confirmation cards, citations
+- [x] `docs/AGENTS.md`; commit
+
+**Phase 5 decisions:**
+
+- Forecasts are per product across warehouses (the planner splits them by each warehouse's share of 56-day sales). Smooth and erratic series fit both damped Holt-Winters and SES and keep whichever has the lower 28-day holdout WAPE. Croston is seeded from the series' average size and interval. Median WAPE on the demo data is about 38 % (noisy daily retail demand).
+- Informational outputs that must always be current are written by the analyzers, in both AI and rule-based modes: alert facts, forecasts, supplier scorecards, ABC–XYZ classes and reports. The model adds explanations and narratives.
+- One generic `AlertService.syncFindings(scope, findings, quietHours)` keeps each agent's alert types in sync, auto-resolves cleared conditions, and keeps person-resolved alerts quiet for a window (stock: the org dedupe hours; anomalies, dead stock and suppliers: 7–14 days; forecast shifts: 72 h).
+- Calibration against the demo data. Demand spikes also need ≥ 5× the median, since weekly peaks clear z > 3.5 on their own. Expiry write-offs don't count as shrinkage. A short delivery is an anomaly only once the PO is closed short; a late remainder is the Sentinel's overdue PO.
+- If the model finishes without proposing anything, the analyzer's proposals are still created (rationale source: rule). Small models often describe an action instead of calling the tool. Proposals still need approval.
+- Output schemas are lenient where small models drift: findings as strings or with other key names, upper/lower-case severity, over-long text truncated instead of rejected.
+- The Report Writer's daily schedule uses `@briefing`, which resolves to the organization's briefing time; the weekly summary is the Monday 09:00 cron. Reports are stored with content and narrative; the Reports pages and PDF come in Phase 6.
+- The Assistant is a chat-only agent definition (editable prompt, model and limits; no schedule). Turns stream as NDJSON from `POST /assistant/conversations/:id/messages`. Write tools produce confirmation cards. Confirming runs the change as the person through `ActionService.confirmFromChat`, and refuses if a matching proposal is already waiting in Approvals. Conversations are private. Answers render through a small built-in Markdown renderer (no HTML injection) with charts from series tool results.
+- Added `list_stock_positions` after a live test: without it the model answered "nothing out of stock at BLR" from an unfiltered alert list.
+- Verified live with qwen3:8b for every agent (runs of 19–56 s) and with no model (integration tests). The Assistant was exercised end to end in the browser.
 
 ### Phase 6 — Insights, reports, simulation
 

@@ -44,7 +44,7 @@ const fromAgent = (a: AgentDto): Draft => ({
   systemPrompt: a.systemPrompt,
 });
 const modelValue = (m: ModelRefDto | null) => (m ? `${m.providerKey}::${m.modelId}` : 'default');
-const CRON_SHAPE = /^(\S+\s+){4}\S+$/;
+const CRON_SHAPE = /^(@briefing|(\S+\s+){4}\S+)$/;
 
 /** Everything people may tune about an agent. Tools, analyzers and hand-offs stay in code. */
 export function AgentSettings({ agent: a }: { agent: AgentDto }) {
@@ -105,135 +105,147 @@ export function AgentSettings({ agent: a }: { agent: AgentDto }) {
         </p>
       )}
 
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle>Autonomy</CardTitle>
-            <CardDescription>How far the agent may go on its own.</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div role="radiogroup" aria-label="Autonomy" className="grid grid-cols-1 gap-2 md:grid-cols-3">
-            {AUTONOMIES.map((level) => (
-              <button
-                key={level}
-                type="button"
-                role="radio"
-                aria-checked={draft.autonomy === level}
-                disabled={!editable}
-                onClick={() => set('autonomy', level)}
-                className={cn(
-                  'rounded-lg border p-3.5 text-left transition-colors disabled:cursor-default',
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
-                  draft.autonomy === level
-                    ? 'border-accent bg-accent-soft'
-                    : 'border-hairline hover:border-hairline-strong',
-                )}
-              >
-                <span className="block text-sm font-semibold">{AUTONOMY_LABELS[level]}</span>
-                <span className="mt-1 block text-xs text-fg-secondary">{AUTONOMY_DESCRIPTIONS[level]}</span>
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle>When it runs</CardTitle>
-            <CardDescription>
-              Scheduled and event-triggered runs skip the model when nothing changed since the last result.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">Schedule</p>
-            {draft.triggers.cron.length === 0 && <p className="text-sm text-fg-secondary">No schedule.</p>}
-            {draft.triggers.cron.map((c, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <Input
-                  aria-label={`Schedule ${i + 1}`}
-                  value={c}
-                  disabled={!editable}
-                  onChange={(e) =>
-                    setTriggers({ cron: draft.triggers.cron.map((x, j) => (j === i ? e.target.value : x)) })
-                  }
-                  aria-invalid={!CRON_SHAPE.test(c.trim()) || undefined}
-                  className="w-44 font-mono"
-                />
-                <span
-                  className={cn(
-                    'min-w-0 flex-1 truncate text-sm',
-                    CRON_SHAPE.test(c.trim()) ? 'text-fg-secondary' : 'text-danger',
-                  )}
-                >
-                  {CRON_SHAPE.test(c.trim())
-                    ? describeCron(c)
-                    : 'Use five fields: minute hour day month weekday'}
-                </span>
-                {editable && (
-                  <IconButton
-                    label="Remove schedule"
-                    onClick={() => setTriggers({ cron: draft.triggers.cron.filter((_, j) => j !== i) })}
+      {/* The Assistant always drafts confirmation cards and runs only in chat. */}
+      {!a.chatOnly && (
+        <>
+          <Card>
+            <CardHeader>
+              <div>
+                <CardTitle>Autonomy</CardTitle>
+                <CardDescription>How far the agent may go on its own.</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div role="radiogroup" aria-label="Autonomy" className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                {AUTONOMIES.map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    role="radio"
+                    aria-checked={draft.autonomy === level}
+                    disabled={!editable}
+                    onClick={() => set('autonomy', level)}
+                    className={cn(
+                      'rounded-lg border p-3.5 text-left transition-colors disabled:cursor-default',
+                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
+                      draft.autonomy === level
+                        ? 'border-accent bg-accent-soft'
+                        : 'border-hairline hover:border-hairline-strong',
+                    )}
                   >
-                    <Trash2 strokeWidth={1.75} />
-                  </IconButton>
+                    <span className="block text-sm font-semibold">{AUTONOMY_LABELS[level]}</span>
+                    <span className="mt-1 block text-xs text-fg-secondary">
+                      {AUTONOMY_DESCRIPTIONS[level]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div>
+                <CardTitle>When it runs</CardTitle>
+                <CardDescription>
+                  Scheduled and event-triggered runs skip the model when nothing changed since the last
+                  result.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium">Schedule</p>
+                {draft.triggers.cron.length === 0 && (
+                  <p className="text-sm text-fg-secondary">No schedule.</p>
+                )}
+                {draft.triggers.cron.map((c, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      aria-label={`Schedule ${i + 1}`}
+                      value={c}
+                      disabled={!editable}
+                      onChange={(e) =>
+                        setTriggers({
+                          cron: draft.triggers.cron.map((x, j) => (j === i ? e.target.value : x)),
+                        })
+                      }
+                      aria-invalid={!CRON_SHAPE.test(c.trim()) || undefined}
+                      className="w-44 font-mono"
+                    />
+                    <span
+                      className={cn(
+                        'min-w-0 flex-1 truncate text-sm',
+                        CRON_SHAPE.test(c.trim()) ? 'text-fg-secondary' : 'text-danger',
+                      )}
+                    >
+                      {CRON_SHAPE.test(c.trim())
+                        ? describeCron(c)
+                        : 'Use five fields: minute hour day month weekday'}
+                    </span>
+                    {editable && (
+                      <IconButton
+                        label="Remove schedule"
+                        onClick={() => setTriggers({ cron: draft.triggers.cron.filter((_, j) => j !== i) })}
+                      >
+                        <Trash2 strokeWidth={1.75} />
+                      </IconButton>
+                    )}
+                  </div>
+                ))}
+                {editable && draft.triggers.cron.length < 5 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="self-start"
+                    onClick={() => setTriggers({ cron: [...draft.triggers.cron, '0 9 * * *'] })}
+                  >
+                    <Plus strokeWidth={1.75} /> Add a schedule
+                  </Button>
                 )}
               </div>
-            ))}
-            {editable && draft.triggers.cron.length < 5 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="self-start"
-                onClick={() => setTriggers({ cron: [...draft.triggers.cron, '0 9 * * *'] })}
+              <fieldset className="flex flex-col gap-2">
+                <legend className="mb-1 text-sm font-medium">Also run after</legend>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {AGENT_EVENTS.map((e) => (
+                    <label key={e} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={draft.triggers.events.includes(e)}
+                        disabled={!editable}
+                        onCheckedChange={(v) =>
+                          setTriggers({
+                            events: v
+                              ? [...draft.triggers.events, e]
+                              : draft.triggers.events.filter((x: AgentEvent) => x !== e),
+                          })
+                        }
+                      />
+                      {AGENT_EVENT_LABELS[e]}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <Field
+                label="Wait for changes to settle"
+                hint="Seconds to collect a burst of changes into one run"
+                className="w-60"
               >
-                <Plus strokeWidth={1.75} /> Add a schedule
-              </Button>
-            )}
-          </div>
-          <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-sm font-medium">Also run after</legend>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {AGENT_EVENTS.map((e) => (
-                <label key={e} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={draft.triggers.events.includes(e)}
-                    disabled={!editable}
-                    onCheckedChange={(v) =>
-                      setTriggers({
-                        events: v
-                          ? [...draft.triggers.events, e]
-                          : draft.triggers.events.filter((x: AgentEvent) => x !== e),
-                      })
-                    }
-                  />
-                  {AGENT_EVENT_LABELS[e]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <Field
-            label="Wait for changes to settle"
-            hint="Seconds to collect a burst of changes into one run"
-            className="w-60"
-          >
-            <Input
-              type="number"
-              min={0}
-              max={3600}
-              disabled={!editable || draft.triggers.events.length === 0}
-              value={draft.triggers.debounceSeconds}
-              onChange={(e) =>
-                setTriggers({ debounceSeconds: Math.max(0, Math.round(Number(e.target.value) || 0)) })
-              }
-              className="text-right tabular"
-            />
-          </Field>
-        </CardContent>
-      </Card>
+                <Input
+                  type="number"
+                  min={0}
+                  max={3600}
+                  disabled={!editable || draft.triggers.events.length === 0}
+                  value={draft.triggers.debounceSeconds}
+                  onChange={(e) =>
+                    setTriggers({ debounceSeconds: Math.max(0, Math.round(Number(e.target.value) || 0)) })
+                  }
+                  className="text-right tabular"
+                />
+              </Field>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       <Card>
         <CardHeader>

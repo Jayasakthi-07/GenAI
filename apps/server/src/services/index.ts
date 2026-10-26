@@ -6,18 +6,22 @@ import { type Env, findRepoRoot } from '../config/env';
 import type { Db } from '../db/client';
 import type { EventBus } from '../domain/events';
 import { ActionService } from './action.service';
+import { AnalysisDataService } from './analysis-data.service';
 import { AgentService } from './agent.service';
 import { AiService } from './ai.service';
 import { AlertService } from './alert.service';
 import { AuditService } from './audit.service';
 import { AuthService } from './auth.service';
 import { CatalogService } from './catalog.service';
+import { ChatService } from './chat.service';
 import { CycleCountService } from './cycle-count.service';
 import { DashboardService } from './dashboard.service';
+import { ForecastService } from './forecast.service';
 import { InventoryService } from './inventory.service';
 import { PlanningService } from './planning.service';
 import { ProductService } from './product.service';
 import { PurchaseOrderService } from './purchase-order.service';
+import { ReportService } from './report.service';
 import { SalesService } from './sales.service';
 import { SearchService } from './search.service';
 import { SettingsService } from './settings.service';
@@ -44,13 +48,14 @@ export function createServices({ prisma, bus, env }: ServiceDeps) {
   const purchaseOrders = new PurchaseOrderService(prisma, bus, inventory);
   const transfers = new TransferService(prisma, bus, inventory);
   const cycleCounts = new CycleCountService(prisma, bus, inventory, catalog);
+  const dashboard = new DashboardService(prisma);
   const services = {
     ai: new AiService(prisma, bus, gateway, registry),
     /** The model router, for the agent runtime. */
     llm: gateway,
     auth: new AuthService(prisma, bus, env.SESSION_TTL_HOURS),
     users: new UserService(prisma),
-    dashboard: new DashboardService(prisma),
+    dashboard,
     inventory,
     catalog,
     products,
@@ -64,6 +69,10 @@ export function createServices({ prisma, bus, env }: ServiceDeps) {
     settings: new SettingsService(prisma, bus),
     search: new SearchService(prisma),
     planning: new PlanningService(prisma),
+    analysis: new AnalysisDataService(prisma),
+    forecasts: new ForecastService(prisma, bus),
+    reports: new ReportService(prisma, bus, dashboard),
+    chat: new ChatService(prisma),
     agents: new AgentService(prisma, bus, agentModuleMap()),
     actions: new ActionService(prisma, bus, { purchaseOrders, transfers, products, cycleCounts, suppliers }),
   };

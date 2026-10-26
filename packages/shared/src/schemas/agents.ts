@@ -22,11 +22,13 @@ const multi = <T extends z.ZodType>(item: T) =>
   );
 
 /* ── Definitions ───────────────────────────────────────────────────────── */
-/** Five cron fields (minute hour day month weekday); validated again by the scheduler. */
+/** `@briefing` runs at the organization's daily briefing time (Settings → Organization). */
+export const BRIEFING_CRON = '@briefing';
+/** Five cron fields (minute hour day month weekday) or `@briefing`; validated again by the scheduler. */
 const cronSchema = z
   .string()
   .trim()
-  .regex(/^(\S+\s+){4}\S+$/, 'Use five cron fields, e.g. 0 7 * * *');
+  .regex(/^(@briefing|(\S+\s+){4}\S+)$/, 'Use five cron fields, e.g. 0 7 * * *');
 
 export const agentLimitsSchema = z.object({
   maxSteps: z.coerce.number().int().min(1).max(30),
@@ -85,6 +87,8 @@ export const agentSchema = z.object({
   modelOverride: modelRefSchema.nullable(),
   handoffsTo: z.array(z.enum(AGENT_KEYS)),
   writes: z.boolean(),
+  /** Runs only in chat (the Assistant): no schedule and no Run now. */
+  chatOnly: z.boolean(),
   status: z.object({ running: z.boolean(), queued: z.boolean(), currentRunId: z.uuid().nullable() }),
   lastRun: runSummarySchema.nullable(),
   nextRunAt: z.string().nullable(),

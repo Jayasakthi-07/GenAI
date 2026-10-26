@@ -15,6 +15,7 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAboutRouteImport } from './routes/_app/about'
 import { Route as AppAlertsRouteImport } from './routes/_app/alerts'
 import { Route as AppApprovalsRouteImport } from './routes/_app/approvals'
+import { Route as AppAssistantRouteImport } from './routes/_app/assistant'
 import { Route as AppAuditRouteImport } from './routes/_app/audit'
 import { Route as AppCustomersRouteImport } from './routes/_app/customers'
 import { Route as AppDesignRouteImport } from './routes/_app/design'
@@ -81,6 +82,11 @@ const AppAlertsRoute = AppAlertsRouteImport.update({
 const AppApprovalsRoute = AppApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssistantRoute = AppAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAuditRoute = AppAuditRouteImport.update({
@@ -282,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AppAboutRoute
   '/alerts': typeof AppAlertsRoute
   '/approvals': typeof AppApprovalsRoute
+  '/assistant': typeof AppAssistantRoute
   '/audit': typeof AppAuditRoute
   '/customers': typeof AppCustomersRoute
   '/design': typeof AppDesignRoute
@@ -324,6 +331,7 @@ export interface FileRoutesByTo {
   '/about': typeof AppAboutRoute
   '/alerts': typeof AppAlertsRoute
   '/approvals': typeof AppApprovalsRoute
+  '/assistant': typeof AppAssistantRoute
   '/audit': typeof AppAuditRoute
   '/customers': typeof AppCustomersRoute
   '/design': typeof AppDesignRoute
@@ -371,6 +379,7 @@ export interface FileRoutesById {
   '/_app/about': typeof AppAboutRoute
   '/_app/alerts': typeof AppAlertsRoute
   '/_app/approvals': typeof AppApprovalsRoute
+  '/_app/assistant': typeof AppAssistantRoute
   '/_app/audit': typeof AppAuditRoute
   '/_app/customers': typeof AppCustomersRoute
   '/_app/design': typeof AppDesignRoute
@@ -419,6 +428,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/alerts'
     | '/approvals'
+    | '/assistant'
     | '/audit'
     | '/customers'
     | '/design'
@@ -461,6 +471,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/alerts'
     | '/approvals'
+    | '/assistant'
     | '/audit'
     | '/customers'
     | '/design'
@@ -507,6 +518,7 @@ export interface FileRouteTypes {
     | '/_app/about'
     | '/_app/alerts'
     | '/_app/approvals'
+    | '/_app/assistant'
     | '/_app/audit'
     | '/_app/customers'
     | '/_app/design'
@@ -593,6 +605,13 @@ declare module '@tanstack/react-router' {
       path: '/approvals'
       fullPath: '/approvals'
       preLoaderRoute: typeof AppApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assistant': {
+      id: '/_app/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AppAssistantRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/audit': {
@@ -915,6 +934,7 @@ interface AppRouteChildren {
   AppAboutRoute: typeof AppAboutRoute
   AppAlertsRoute: typeof AppAlertsRoute
   AppApprovalsRoute: typeof AppApprovalsRoute
+  AppAssistantRoute: typeof AppAssistantRoute
   AppAuditRoute: typeof AppAuditRoute
   AppCustomersRoute: typeof AppCustomersRoute
   AppDesignRoute: typeof AppDesignRoute
@@ -947,6 +967,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAboutRoute: AppAboutRoute,
   AppAlertsRoute: AppAlertsRoute,
   AppApprovalsRoute: AppApprovalsRoute,
+  AppAssistantRoute: AppAssistantRoute,
   AppAuditRoute: AppAuditRoute,
   AppCustomersRoute: AppCustomersRoute,
   AppDesignRoute: AppDesignRoute,

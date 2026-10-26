@@ -1,4 +1,14 @@
-import type { ActionDto, AgentDto, AgentRunDetail, ApiError } from '@stockroom/shared';
+import type {
+  ActionDto,
+  AgentDto,
+  AgentKey,
+  AgentRunDetail,
+  ApiError,
+  ChatMessageDto,
+  ChatStreamEvent,
+  ConversationDetail,
+  ConversationDto,
+} from '@stockroom/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, inject, it } from 'vitest';
 import type { MockProvider } from '../src/ai/gateway/adapters/mock';
 import type { ChatRequest } from '../src/ai/gateway/types';
@@ -24,7 +34,7 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
   const handoffs: Handoff[] = [];
 
   const run = async (
-    key: 'stock_sentinel' | 'replenishment_planner',
+    key: AgentKey,
     trigger: 'MANUAL' | 'SCHEDULE' = 'MANUAL',
     detail: Record<string, unknown> | null = null,
   ) => {
@@ -396,6 +406,153 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
       limits: { maxToolCalls: 8 },
     });
     expect(reset.body.systemPrompt).toBe(reset.body.defaultPrompt);
+  });
+
+  it('runs every scheduled agent end to end without a model', async () => {
+    await ctx.prisma.providerConfig.update({ where: { key: 'mock' }, data: { isEnabled: false } });
+    try {
+      for (const key of [
+        'demand_forecaster',
+        'anomaly_auditor',
+        'supplier_analyst',
+        'inventory_optimizer',
+        'report_writer',
+      ] as const) {
+        const r = await run(key);
+        expect(r.status, `${key}: ${r.error ?? ''}`).toBe('SUCCEEDED');
+        expect([null, 'RULE_BASED']).toContain(r.mode);
+        expect(r.steps[0]?.type).toBe('ANALYSIS');
+      }
+      // Informational outputs are recorded directly, model or not.
+      expect(await ctx.prisma.forecast.count({ where: { isLatest: true } })).toBe(2);
+      const products = await ctx.prisma.product.findMany({ select: { abcClass: true, xyzClass: true } });
+      expect(products.every((p) => p.abcClass && p.xyzClass)).toBe(true);
+      const report = await ctx.prisma.report.findFirstOrThrow();
+      expect(report).toMatchObject({ type: 'DAILY_BRIEFING', narrativeSource: 'RULE' });
+      const supplier = await ctx.prisma.supplier.findUniqueOrThrow({ where: { id: fx.supplier.id } });
+      expect(supplier.scoredAt).not.toBeNull();
+    } finally {
+      await ctx.prisma.providerConfig.update({ where: { key: 'mock' }, data: { isEnabled: true } });
+    }
+  });
+
+  describe('Assistant', () => {
+    const ask = async (client: Client, conversationId: string, content: string) => {
+      const res = await client.post<string>(`/assistant/conversations/${conversationId}/messages`, {
+        content,
+      });
+      expect(res.status).toBe(200);
+      return String(res.body)
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => JSON.parse(l) as ChatStreamEvent);
+    };
+    const doneOf = (events: ChatStreamEvent[]) => {
+      const done = events.find((e) => e.type === 'done');
+      if (done?.type !== 'done') throw new Error('no done event');
+      return done.message;
+    };
+
+    it('answers with tools, drafts a card, and carries it out as the person on confirm', async () => {
+      mock.setScript((_req, turn) => {
+        if (turn === 0)
+          return { toolCalls: [{ id: 'a1', name: 'list_stock_positions', arguments: { warehouse: 'CHN' } }] };
+        if (turn === 1)
+          return {
+            toolCalls: [
+              {
+                id: 'a2',
+                name: 'propose_transfer',
+                arguments: {
+                  from: 'CHN',
+                  to: 'BLR',
+                  lines: [{ product: 'RICE-1', quantity: 5 }],
+                  rationale: 'BLR has no rice.',
+                },
+              },
+            ],
+          };
+        return { content: 'I drafted a transfer of 5 bags from CHN to BLR.\n\nBased on stock at CHN.' };
+      });
+      const conv = (await manager.post<ConversationDto>('/assistant/conversations', {})).body;
+      const events = await ask(manager, conv.id, 'Move some rice to Bengaluru');
+      expect(events.map((e) => e.type)).toEqual(
+        expect.arrayContaining(['start', 'tool', 'part', 'text', 'done']),
+      );
+      const message = doneOf(events);
+      const card = message.parts.find((p) => p.kind === 'card');
+      expect(card?.kind === 'card' && card.card).toMatchObject({
+        type: 'CREATE_TRANSFER',
+        status: 'pending',
+      });
+      expect(message.citations.map((c) => c.tool)).toContain('list_stock_positions');
+      // Drafting changed nothing.
+      expect(await ctx.prisma.transfer.count()).toBe(0);
+
+      const cardId = card?.kind === 'card' ? card.card.id : '';
+      const confirmed = await manager.post<{ message: ChatMessageDto; action: ActionDto }>(
+        `/assistant/messages/${message.id}/cards/${cardId}/confirm`,
+      );
+      expect(confirmed.status).toBe(200);
+      expect(confirmed.body.action).toMatchObject({ status: 'EXECUTED', agent: { key: 'assistant' } });
+      expect(confirmed.body.message.parts.find((p) => p.kind === 'card')).toMatchObject({
+        card: { status: 'confirmed' },
+      });
+      const audit = await ctx.prisma.auditLog.findFirstOrThrow({ where: { action: 'transfer.create' } });
+      expect(audit).toMatchObject({ actorType: 'USER', actorUserId: fx.users.manager.id });
+      // A decided card can't be confirmed twice.
+      expect((await manager.post(`/assistant/messages/${message.id}/cards/${cardId}/confirm`)).status).toBe(
+        409,
+      );
+
+      const detail = await manager.get<ConversationDetail>(`/assistant/conversations/${conv.id}`);
+      expect(detail.body.messages.map((m) => m.role)).toEqual(['user', 'assistant']);
+      expect(detail.body.title).toBe('Move some rice to Bengaluru');
+      // Conversations are private.
+      const admin = await signIn(ctx.app, fx.users.admin.email);
+      expect((await admin.get(`/assistant/conversations/${conv.id}`)).status).toBe(404);
+    });
+
+    it('lets the person dismiss a draft', async () => {
+      mock.setScript((_req, turn) =>
+        turn === 0
+          ? {
+              toolCalls: [
+                {
+                  id: 'd1',
+                  name: 'propose_cycle_count',
+                  arguments: { warehouse: 'CHN', products: ['RICE-1'], rationale: 'Check the shelf.' },
+                },
+              ],
+            }
+          : { content: 'Drafted a count.' },
+      );
+      const conv = (await manager.post<ConversationDto>('/assistant/conversations', {})).body;
+      const message = doneOf(await ask(manager, conv.id, 'Count rice at Chennai'));
+      const card = message.parts.find((p) => p.kind === 'card');
+      const cardId = card?.kind === 'card' ? card.card.id : '';
+      const dismissed = await manager.post<ChatMessageDto>(
+        `/assistant/messages/${message.id}/cards/${cardId}/dismiss`,
+      );
+      expect(dismissed.body.parts.find((p) => p.kind === 'card')).toMatchObject({
+        card: { status: 'dismissed' },
+      });
+      expect(
+        await ctx.prisma.cycleCount.count({ where: { lines: { some: { productId: fx.rice.id } } } }),
+      ).toBe(0);
+    });
+
+    it('gives setup guidance when no model is available', async () => {
+      await ctx.prisma.providerConfig.update({ where: { key: 'mock' }, data: { isEnabled: false } });
+      try {
+        const conv = (await staff.post<ConversationDto>('/assistant/conversations', {})).body;
+        const message = doneOf(await ask(staff, conv.id, 'What is low?'));
+        expect(message).toMatchObject({ ruleBased: true, role: 'assistant' });
+        expect(message.content).toMatch(/AI isn’t available/);
+      } finally {
+        await ctx.prisma.providerConfig.update({ where: { key: 'mock' }, data: { isEnabled: true } });
+      }
+    });
   });
 
   it('shows runs with steps through the API', async () => {

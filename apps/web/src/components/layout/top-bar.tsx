@@ -1,6 +1,7 @@
 import { ROLE_LABELS } from '@stockroom/shared';
 import { Link, useMatches } from '@tanstack/react-router';
-import { Info, LogOut, Menu, Monitor, Moon, Search, Settings, Sun, UserRound } from 'lucide-react';
+import { Info, LogOut, Menu, Monitor, Moon, Search, Settings, Sparkles, Sun, UserRound } from 'lucide-react';
+import { assistantPanel } from '@/features/assistant/panel-store';
 import { useMe } from '@/lib/auth';
 import { type ThemePreference, usePreferences } from '@/lib/preferences';
 import { cn, modKey } from '@/lib/utils';
@@ -67,6 +68,19 @@ export function TopBar({ onOpenMenu, onOpenPalette, onSignOut }: TopBarProps) {
         </IconButton>
 
         <AgentActivity />
+        <button
+          type="button"
+          onClick={() => assistantPanel.open()}
+          className={cn(
+            'inline-flex h-8 items-center gap-1.5 rounded-md border border-hairline bg-surface/60 px-2.5 text-sm font-medium text-fg-secondary',
+            'transition-colors hover:border-hairline-strong hover:text-fg',
+            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]',
+          )}
+          aria-label={`Ask the Assistant (${modKey}+J)`}
+        >
+          <Sparkles className="size-4 text-accent-text" strokeWidth={1.75} />
+          <span className="hidden lg:inline">Ask</span>
+        </button>
         <ModelChip />
 
         <DropdownMenu>

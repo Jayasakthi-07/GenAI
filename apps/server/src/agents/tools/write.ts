@@ -4,15 +4,17 @@ import type { ProposalOutcome } from '../../services/action.service';
 import { defineTool, type ToolContext } from '../types';
 import { resolveOne } from './read';
 
+// Optional because small models often explain per line instead; the computed summary fills in.
 const rationale = z
   .string()
-  .min(10)
   .max(1500)
+  .optional()
   .describe('Why, citing the numbers from tool results (never invented ones)');
 const ref = (what: string) => z.string().min(1).describe(`${what} id or code, from a tool result`);
 
 /** Every write tool ends here: a proposal through ActionService, gated by the agent's autonomy. */
 async function propose(ctx: ToolContext, type: ActionType, payload: unknown, why: string) {
+  if (ctx.draft) return ctx.draft(type, payload, why);
   const outcome: ProposalOutcome = await ctx.services.actions.propose(
     ctx.actor,
     {
@@ -77,7 +79,8 @@ export const writeTools = [
         if (!unitCost) throw new Error(`${l.product} isn’t in this supplier’s catalog; give a unitCost.`);
         return { productId, quantity: l.quantity, unitCost, rationale: l.rationale ?? null };
       });
-      return propose(ctx, 'CREATE_PURCHASE_ORDER', { supplierId, warehouseId, lines }, a.rationale);
+      const why = a.rationale ?? lines.flatMap((l) => (l.rationale ? [l.rationale] : [])).join(' ');
+      return propose(ctx, 'CREATE_PURCHASE_ORDER', { supplierId, warehouseId, lines }, why);
     },
   }),
 
@@ -112,7 +115,7 @@ export const writeTools = [
         ctx,
         'CREATE_TRANSFER',
         { fromWarehouseId, toWarehouseId, lines, reason: null },
-        a.rationale,
+        a.rationale ?? '',
       );
     },
   }),
@@ -141,7 +144,7 @@ export const writeTools = [
           safetyStock: a.safetyStock,
           maxStock: a.maxStock,
         },
-        a.rationale,
+        a.rationale ?? '',
       ),
   }),
 
@@ -166,8 +169,8 @@ export const writeTools = [
       return propose(
         ctx,
         'CREATE_CYCLE_COUNT',
-        { warehouseId, productIds, reason: a.rationale.slice(0, 500) },
-        a.rationale,
+        { warehouseId, productIds, reason: (a.rationale ?? '').slice(0, 500) || null },
+        a.rationale ?? '',
       );
     },
   }),
@@ -192,9 +195,9 @@ export const writeTools = [
         {
           productId: await resolveOne(ctx, 'product', a.product),
           newPrice: a.newPrice,
-          reason: a.rationale.slice(0, 500),
+          reason: (a.rationale ?? '').slice(0, 500) || null,
         },
-        a.rationale,
+        a.rationale ?? '',
       ),
   }),
 
@@ -213,7 +216,7 @@ export const writeTools = [
           productId: await resolveOne(ctx, 'product', a.product),
           supplierId: await resolveOne(ctx, 'supplier', a.supplier),
         },
-        a.rationale,
+        a.rationale ?? '',
       ),
   }),
 ];

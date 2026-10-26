@@ -86,7 +86,7 @@ function AgentPage() {
               />
               {a.isEnabled ? 'On' : 'Off'}
             </label>
-            {can('agents.run') && (
+            {can('agents.run') && !a.chatOnly && (
               <Button
                 variant="primary"
                 disabled={a.status.running || a.status.queued || runNow.isPending}

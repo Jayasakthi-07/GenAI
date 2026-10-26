@@ -1,6 +1,7 @@
 import { AGENT_EVENT_LABELS, type AgentDto } from '@stockroom/shared';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Play } from 'lucide-react';
+import { MessagesSquare, Play } from 'lucide-react';
+import { assistantPanel } from '@/features/assistant/panel-store';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -111,7 +112,7 @@ export function AgentCard({ agent: a }: { agent: AgentDto }) {
         <div>
           <dt className="text-fg-tertiary">Runs</dt>
           <dd className="mt-0.5 truncate text-fg-secondary">
-            {a.isEnabled ? triggers.join(' · ') || 'Manual only' : 'Off'}
+            {a.chatOnly ? 'In chat' : a.isEnabled ? triggers.join(' · ') || 'Manual only' : 'Off'}
           </dd>
         </div>
         <div>
@@ -153,16 +154,22 @@ export function AgentCard({ agent: a }: { agent: AgentDto }) {
             Details and settings
           </Link>
         )}
-        {can('agents.run') && (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="ml-auto"
-            disabled={a.status.running || a.status.queued || runNow.isPending}
-            onClick={() => runNow.start(a)}
-          >
-            <Play strokeWidth={1.75} /> Run now
+        {a.chatOnly ? (
+          <Button variant="secondary" size="sm" className="ml-auto" onClick={() => assistantPanel.open()}>
+            <MessagesSquare strokeWidth={1.75} /> Ask
           </Button>
+        ) : (
+          can('agents.run') && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="ml-auto"
+              disabled={a.status.running || a.status.queued || runNow.isPending}
+              onClick={() => runNow.start(a)}
+            >
+              <Play strokeWidth={1.75} /> Run now
+            </Button>
+          )
         )}
       </div>
     </Card>

@@ -23,7 +23,7 @@ const WIDTHS = [
   { name: '390', width: 390, height: 844, mobile: true },
 ];
 const THEMES = ['light', 'dark'];
-/** `path` may use :product, :po, :so, :supplier, :transfer, :count, :run and :action, resolved from the API once. */
+/** `path` may use :product, :po, :so, :supplier, :transfer, :count, :run, :action and :conversation, resolved from the API once. */
 const PAGES = [
   { key: 'login', path: '/login', auth: false },
   { key: 'dashboard', path: '/', full: true },
@@ -54,6 +54,9 @@ const PAGES = [
   { key: 'agent-settings', path: '/agents/replenishment_planner?tab=settings', full: true },
   { key: 'agent-run', path: '/agents/runs/:run', full: true },
   { key: 'approvals', path: '/approvals' },
+  { key: 'assistant', path: '/assistant' },
+  { key: 'assistant-thread', path: '/assistant?c=:conversation', full: true },
+  { key: 'assistant-panel', path: '/stock', action: 'assistant' },
   { key: 'approval', path: '/approvals?id=:action', full: true },
   { key: 'audit', path: '/audit' },
   { key: 'settings-organization', path: '/settings/organization', full: true },
@@ -83,6 +86,11 @@ async function resolveIds(request) {
     count: await first('/cycle-counts?pageSize=1'),
     run: await first('/agent-runs?pageSize=1&status=SUCCEEDED&agentKey=replenishment_planner'),
     action: await first('/actions?pageSize=1&status=PENDING'),
+    conversation: await (async () => {
+      const res = await request.get(`${base}/api/v1/assistant/conversations`);
+      const list = await res.json();
+      return Array.isArray(list) ? (list[0]?.id ?? '') : '';
+    })(),
   };
 }
 let ids = null;
@@ -142,6 +150,10 @@ try {
         if (page.action === 'palette') {
           await tab.keyboard.press('Control+K');
           await tab.waitForTimeout(300);
+        }
+        if (page.action === 'assistant') {
+          await tab.keyboard.press('Control+J');
+          await tab.waitForTimeout(900);
         }
         if (page.action === 'menu') {
           await tab.getByRole('button', { name: 'Open navigation' }).click();

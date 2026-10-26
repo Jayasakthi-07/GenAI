@@ -577,6 +577,78 @@ export class ActionService {
     };
   }
 
+  /**
+   * A change drafted in the Assistant and confirmed by a person: recorded as an approved action and
+   * executed as that person (their permissions apply), so it shows up in history and the audit log.
+   */
+  async confirmFromChat(
+    actor: Actor,
+    input: {
+      type: ActionType;
+      payload: unknown;
+      rationale: string;
+      modelUsed: string | null;
+      dataUsed: Citation[];
+      runId: string | null;
+    },
+  ): Promise<ActionDto> {
+    if (actor.type !== 'user') throw invalid('Only a signed-in person can confirm a change.');
+    const prepared = await this.prepare(input.type, input.payload);
+    const open = await this.prisma.agentAction.findFirst({
+      where: { dedupeKey: prepared.dedupeKey, status: { in: [...OPEN] } },
+      select: { title: true },
+    });
+    if (open)
+      throw new AppError(
+        'CONFLICT',
+        `A matching proposal is already waiting in Approvals (“${open.title}”). Approve it there instead.`,
+      );
+    const id = await inTransaction(this.prisma, this.bus, async (tx, emit) => {
+      const agent = await tx.agentDefinition.findUnique({
+        where: { key: 'assistant' },
+        select: { id: true },
+      });
+      if (!agent) throw notFound('Agent');
+      const row = await tx.agentAction.create({
+        data: {
+          runId: input.runId,
+          agentId: agent.id,
+          type: prepared.type,
+          status: 'APPROVED',
+          title: prepared.title,
+          summary: prepared.summary,
+          rationale: input.rationale.trim().slice(0, 4000) || prepared.summary,
+          rationaleSource: 'AI',
+          modelUsed: input.modelUsed,
+          payload: toJson(prepared.payload),
+          expectedImpact: toJson(prepared.impact),
+          dataUsed: toJson(input.dataUsed.slice(0, 30)),
+          riskLevel: prepared.riskLevel,
+          dedupeKey: prepared.dedupeKey,
+          decidedById: actor.userId,
+          decidedAt: new Date(),
+          decisionReason: 'Confirmed in the Assistant',
+        },
+        select: { id: true },
+      });
+      await writeAudit(tx, actor, {
+        action: 'action.confirm',
+        entityType: 'AgentAction',
+        entityId: row.id,
+        summary: `Confirmed in the Assistant: ${prepared.title}`,
+        after: { type: prepared.type, payload: prepared.payload },
+      });
+      emit('action.created', {
+        actionId: row.id,
+        agentKey: 'assistant',
+        type: prepared.type,
+        status: 'APPROVED',
+      });
+      return row.id;
+    });
+    return this.execute(id, actor, actor);
+  }
+
   /** Products already in an open purchase-order proposal (per warehouse), so planners don't double up. */
   async openPoProducts(warehouseId?: string): Promise<Set<string>> {
     const rows = await this.prisma.agentAction.findMany({
@@ -886,8 +958,16 @@ export class ActionService {
     return { pending, byAgent };
   }
 
-  private async toDto(rows: ActionRow[]): Promise<ActionDto[]> {
-    const payloads = rows.map((r) => (r.editedPayload ?? r.payload) as Record<string, unknown>);
+  /** Names and current numbers for a payload, as a person needs to see them (no writes). */
+  async preview(type: ActionType, payload: unknown): Promise<ActionDisplay> {
+    const [d] = await this.displays([{ type, payload: payload as Record<string, unknown> }]);
+    return d as ActionDisplay;
+  }
+
+  private async displays(
+    items: Array<{ type: ActionType; payload: Record<string, unknown> }>,
+  ): Promise<ActionDisplay[]> {
+    const payloads = items.map((i) => i.payload);
     const productIds = new Set<string>();
     const warehouseIds = new Set<string>();
     const supplierIds = new Set<string>();
@@ -900,7 +980,7 @@ export class ActionService {
         productIds.add(l.productId);
       for (const pid of (p.productIds as string[] | undefined) ?? []) productIds.add(pid);
     }
-    const [products, warehouses, suppliers, levels, names] = await Promise.all([
+    const [products, warehouses, suppliers, levels] = await Promise.all([
       productIds.size
         ? this.prisma.product.findMany({
             where: { id: { in: [...productIds] } },
@@ -941,10 +1021,6 @@ export class ActionService {
             },
           })
         : [],
-      userNames(
-        this.prisma,
-        rows.map((r) => r.decidedById),
-      ),
     ]);
     const prod = new Map(products.map((p) => [p.id, p]));
     const wh = new Map(warehouses.map((w) => [w.id, w]));
@@ -976,7 +1052,7 @@ export class ActionService {
     };
     const whRef = (id: unknown) => (typeof id === 'string' ? (wh.get(id) ?? null) : null);
 
-    return rows.map((r, i) => {
+    return items.map((r, i) => {
       const p = payloads[i] ?? {};
       const atWh = (typeof p.warehouseId === 'string' ? p.warehouseId : p.fromWarehouseId) as
         string | undefined;
@@ -1029,6 +1105,25 @@ export class ActionService {
           },
         ];
       }
+      return display;
+    });
+  }
+
+  private async toDto(rows: ActionRow[]): Promise<ActionDto[]> {
+    const [displays, names] = await Promise.all([
+      this.displays(
+        rows.map((r) => ({
+          type: r.type,
+          payload: (r.editedPayload ?? r.payload) as Record<string, unknown>,
+        })),
+      ),
+      userNames(
+        this.prisma,
+        rows.map((r) => r.decidedById),
+      ),
+    ]);
+    return rows.map((r, i) => {
+      const display = displays[i] as ActionDisplay;
       const key = r.agent.key as AgentKey;
       return {
         id: r.id,

@@ -11,6 +11,7 @@ import { PO_OPEN_STATUSES, supplierInputSchema, supplierProductInputSchema } fro
 import type { Prisma } from '#generated/prisma/client.ts';
 import { type PoRecord, scoreSupplier, type SupplierScore } from '../analytics/supplier-score';
 import type { Db } from '../db/client';
+import { toJson } from '../db/json';
 import { inTransaction } from '../db/tx';
 import { type Actor, assertCan } from '../domain/actor';
 import { writeAudit } from '../domain/audit';
@@ -102,6 +103,59 @@ export class SupplierService {
     for (const [id, pos] of history) scores.set(id, scoreSupplier(pos, today));
     this.scoreCache = { at: Date.now(), today, scores };
     return scores;
+  }
+
+  /** Live scores alongside the last saved snapshot, for the Supplier Analyst. */
+  async scoreComparison() {
+    const [live, rows] = await Promise.all([
+      this.scores(),
+      this.prisma.supplier.findMany({
+        where: { isActive: true },
+        select: { id: true, code: true, name: true, score: true, riskLevel: true, scoredAt: true },
+      }),
+    ]);
+    return rows.map((s) => ({
+      supplierId: s.id,
+      code: s.code,
+      name: s.name,
+      live: live.get(s.id) ?? null,
+      saved: {
+        score: s.score === null ? null : Number(s.score),
+        riskLevel: s.riskLevel,
+        scoredAt: iso(s.scoredAt),
+      },
+    }));
+  }
+
+  /** Stores the scores on the suppliers (what lists, the planner and history read). */
+  async saveScores(
+    actor: Actor,
+    items: Array<{ supplierId: string; score: SupplierScore }>,
+  ): Promise<number> {
+    assertCan(actor, 'inventory.view');
+    if (!items.length) return 0;
+    const now = new Date();
+    await inTransaction(this.prisma, this.bus, async (tx, emit) => {
+      for (const { supplierId, score } of items) {
+        await tx.supplier.update({
+          where: { id: supplierId },
+          data: {
+            score: score.score === null ? null : score.score.toFixed(2),
+            riskLevel: score.riskLevel,
+            scoreBreakdown: toJson({ ...score.breakdown, metrics: score.metrics, flags: score.flags }),
+            scoredAt: now,
+          },
+        });
+      }
+      await writeAudit(tx, actor, {
+        action: 'supplier.score',
+        entityType: 'Supplier',
+        summary: `Updated scorecards for ${items.length} suppliers`,
+        after: { suppliers: items.length },
+      });
+      emit('catalog.changed', { entity: 'supplier' });
+    });
+    return items.length;
   }
 
   invalidateScores() {

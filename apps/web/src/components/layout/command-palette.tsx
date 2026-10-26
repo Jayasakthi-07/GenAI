@@ -14,12 +14,14 @@ import {
   Receipt,
   Search,
   ShoppingCart,
+  Sparkles,
   Sun,
   Users,
   type LucideIcon,
 } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { useEffect, useState } from 'react';
+import { assistantPanel } from '@/features/assistant/panel-store';
 import { api } from '@/lib/api';
 import { useCan } from '@/lib/auth';
 import { FOOTER_NAV, NAV } from '@/lib/nav';
@@ -80,6 +82,10 @@ export function CommandPalette({ open, onOpenChange, onSignOut }: CommandPalette
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         onOpenChange(!open);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        assistantPanel.open();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -171,6 +177,20 @@ export function CommandPalette({ open, onOpenChange, onSignOut }: CommandPalette
               <Command.Empty className="py-10 text-center text-sm text-fg-secondary">
                 {results.isFetching ? 'Searching…' : 'No matches.'}
               </Command.Empty>
+              {text.trim().length >= 3 && (
+                <Command.Group heading="Assistant" className={groupClasses}>
+                  <Command.Item
+                    value={`ask assistant ${text}`}
+                    onSelect={() => run(() => assistantPanel.ask(text.trim()))}
+                    className={itemClasses}
+                  >
+                    <Sparkles strokeWidth={1.75} />
+                    <span className="min-w-0 flex-1 truncate">
+                      Ask the Assistant: <span className="text-fg-secondary">“{text.trim()}”</span>
+                    </span>
+                  </Command.Item>
+                </Command.Group>
+              )}
               {records.length > 0 && (
                 <Command.Group heading="Records" className={groupClasses}>
                   {records.map((r) => {

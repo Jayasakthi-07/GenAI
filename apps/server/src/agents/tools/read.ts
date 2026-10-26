@@ -2,6 +2,8 @@ import {
   ALERT_TYPES,
   alertsQuerySchema,
   PO_OPEN_STATUSES,
+  STOCK_STATES,
+  stockPositionsQuerySchema,
   poListQuerySchema,
   productListQuerySchema,
   SEVERITIES,
@@ -139,6 +141,51 @@ export const readTools = [
   }),
 
   defineTool({
+    name: 'list_stock_positions',
+    kind: 'read',
+    description:
+      'Stock by product × warehouse: on hand, available, on order, reorder point, days of cover and state (OUT = none available, LOW = at or below the reorder point and not covered by orders, ON_ORDER = low but covered, OVER = above twice the max, OK). Filter by warehouse, state or product. Lowest cover first.',
+    input: z.object({
+      warehouse: z.string().optional().describe('Warehouse id or code'),
+      state: z.enum(STOCK_STATES).optional(),
+      product: z.string().optional().describe('Product id or SKU'),
+      limit: limit(40, 20),
+    }),
+    label: (a) =>
+      `Checking stock${a.state ? ` (${a.state.toLowerCase().replace('_', ' ')})` : ''}${a.warehouse ? ` at ${a.warehouse}` : ''}…`,
+    run: async (ctx, a) => {
+      const warehouseId = a.warehouse ? await resolveOne(ctx, 'warehouse', a.warehouse) : undefined;
+      const productId = a.product ? await resolveOne(ctx, 'product', a.product) : undefined;
+      const res = await ctx.services.inventory.positions(
+        stockPositionsQuerySchema.parse({
+          pageSize: a.limit,
+          warehouseId,
+          productId,
+          state: a.state,
+          sort: 'daysOfCover:asc',
+        }),
+      );
+      return {
+        total: res.meta.total,
+        positions: res.data.map((p) => ({
+          productId: p.product.id,
+          sku: p.product.sku,
+          name: p.product.name,
+          warehouse: p.warehouse.code,
+          state: p.state,
+          onHand: p.onHand,
+          available: p.available,
+          onOrder: p.onOrder,
+          reorderPoint: p.reorderPoint,
+          perDay: round(p.avgDailyDemand, 2),
+          daysOfCover: p.daysOfCover === null ? null : round(p.daysOfCover),
+          value: p.value,
+        })),
+      };
+    },
+  }),
+
+  defineTool({
     name: 'get_sales_history',
     kind: 'read',
     description: 'Units and revenue per week for one product (all warehouses), most recent last.',
@@ -167,12 +214,14 @@ export const readTools = [
     input: z.object({
       type: z.enum(ALERT_TYPES).optional(),
       severity: z.enum(SEVERITIES).optional(),
+      warehouse: z.string().optional().describe('Warehouse id or code'),
       limit: limit(40, 20),
     }),
     label: () => 'Checking open alerts…',
     run: async (ctx, a) => {
+      const warehouseId = a.warehouse ? await resolveOne(ctx, 'warehouse', a.warehouse) : undefined;
       const res = await ctx.services.alerts.list(
-        alertsQuerySchema.parse({ pageSize: a.limit, type: a.type, severity: a.severity }),
+        alertsQuerySchema.parse({ pageSize: a.limit, type: a.type, severity: a.severity, warehouseId }),
       );
       return {
         total: res.meta.total,

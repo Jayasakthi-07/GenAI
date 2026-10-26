@@ -154,9 +154,9 @@ export async function signIn(app: TestApp, email: string) {
       headers: { cookie, origin: TEST_ORIGIN },
       ...(payload === undefined ? {} : { payload: payload as object }),
     });
-    const body = r.headers['content-type']?.toString().includes('json')
-      ? r.json<T>()
-      : (r.body as unknown as T);
+    const type = r.headers['content-type']?.toString() ?? '';
+    // NDJSON streams (the Assistant) are returned as text for the test to split.
+    const body = type.includes('json') && !type.includes('ndjson') ? r.json<T>() : (r.body as unknown as T);
     return { status: r.statusCode, body, headers: r.headers, raw: r.rawPayload };
   };
   return {

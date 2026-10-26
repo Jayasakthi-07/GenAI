@@ -53,6 +53,7 @@ export const stockSentinel: AgentModule<State, Output> = {
   outputs: 'Alerts with explanations; urgent items handed to the Replenishment Planner.',
   tools: [
     'get_inventory_kpis',
+    'list_stock_positions',
     'get_product_details',
     'get_sales_history',
     'list_open_alerts',

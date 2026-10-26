@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from '
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { AssistantPanel } from '@/components/ai/assistant-panel';
 import { CommandPalette } from '@/components/layout/command-palette';
 import { Sidebar, SidebarContent } from '@/components/layout/sidebar';
 import { TopBar } from '@/components/layout/top-bar';
@@ -98,6 +99,7 @@ function AppLayout() {
       </div>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onSignOut={signOut} />
+      <AssistantPanel />
     </div>
   );
 }

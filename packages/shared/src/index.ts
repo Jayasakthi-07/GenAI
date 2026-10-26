@@ -17,3 +17,5 @@ export * from './schemas/settings';
 export * from './schemas/search';
 export * from './schemas/ai';
 export * from './schemas/agents';
+export * from './schemas/reports';
+export * from './schemas/assistant';
