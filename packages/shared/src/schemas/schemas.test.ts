@@ -26,8 +26,8 @@ describe('roles', () => {
 
 describe('auth schemas', () => {
   it('normalizes the login email', () => {
-    expect(loginRequestSchema.parse({ email: '  Jayasakthi@Kaveri.Example ', password: 'x' }).email).toBe(
-      'jayasakthi@kaveri.example',
+    expect(loginRequestSchema.parse({ email: '  Jayasakthi@Pmu.Example ', password: 'x' }).email).toBe(
+      'jayasakthi@pmu.example',
     );
   });
 

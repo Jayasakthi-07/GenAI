@@ -18,10 +18,10 @@ export const DEMO_PASSWORD = 'stockroom2026';
 
 /** The team. `key` is how the simulator refers to who did what. */
 export const USERS = [
-  { key: 'admin', email: 'jayasakthi@kaveri.example', name: 'Jayasakthi', role: 'ADMIN' },
-  { key: 'admin2', email: 'mehavardhini@kaveri.example', name: 'Mehavardhini', role: 'ADMIN' },
-  { key: 'manager', email: 'shaheer@kaveri.example', name: 'Shaheer', role: 'MANAGER' },
-  { key: 'staff', email: 'sameer@kaveri.example', name: 'Sameer', role: 'STAFF' },
+  { key: 'admin', email: 'jayasakthi@pmu.example', name: 'Jayasakthi', role: 'ADMIN' },
+  { key: 'admin2', email: 'mehavardhini@pmu.example', name: 'Mehavardhini', role: 'ADMIN' },
+  { key: 'manager', email: 'shaheer@pmu.example', name: 'Shaheer', role: 'MANAGER' },
+  { key: 'staff', email: 'sameer@pmu.example', name: 'Sameer', role: 'STAFF' },
 ] as const;
 export type DemoUserKey = (typeof USERS)[number]['key'];
 

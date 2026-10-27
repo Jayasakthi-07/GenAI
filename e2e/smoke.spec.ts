@@ -2,8 +2,8 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 
 /** The seeded demo accounts (DEMO_MODE): see apps/server/src/demo/catalog.ts. */
 const DEMO_PASSWORD = 'stockroom2026';
-const MANAGER = 'shaheer@kaveri.example';
-const ADMIN = 'jayasakthi@kaveri.example';
+const MANAGER = 'shaheer@pmu.example';
+const ADMIN = 'jayasakthi@pmu.example';
 
 /**
  * Fails the test on any console error, uncaught exception, or request that leaves this machine
@@ -129,7 +129,7 @@ test('a temporary password must be replaced before going on', async ({ browser }
   const adminContext = await browser.newContext();
   const admin = await adminContext.newPage();
   await signIn(admin, ADMIN);
-  const email = `e2e.${Date.now()}@kaveri.example`;
+  const email = `e2e.${Date.now()}@pmu.example`;
   const temporary = `Temp${Date.now()}x`;
   await api(admin.request, 'post', '/users', {
     email,

@@ -74,12 +74,12 @@ pnpm dev            # API on http://127.0.0.1:4000, app on http://127.0.0.1:5173
 
 Open **http://127.0.0.1:5173** and sign in with a demo account (the sign-in screen lists them in demo mode):
 
-| Name         | Role    | Email                         | Password        | Can                                                         |
-| ------------ | ------- | ----------------------------- | --------------- | ----------------------------------------------------------- |
-| Jayasakthi   | Admin   | `jayasakthi@kaveri.example`   | `stockroom2026` | Everything, including users, AI keys and resetting the demo |
-| Mehavardhini | Admin   | `mehavardhini@kaveri.example` | `stockroom2026` | Everything, including users, AI keys and resetting the demo |
-| Shaheer      | Manager | `shaheer@kaveri.example`      | `stockroom2026` | Operations, approvals, agents and the simulator             |
-| Sameer       | Staff   | `sameer@kaveri.example`       | `stockroom2026` | Day-to-day stock work and orders                            |
+| Name         | Role    | Email                      | Password        | Can                                                         |
+| ------------ | ------- | -------------------------- | --------------- | ----------------------------------------------------------- |
+| Jayasakthi   | Admin   | `jayasakthi@pmu.example`   | `stockroom2026` | Everything, including users, AI keys and resetting the demo |
+| Mehavardhini | Admin   | `mehavardhini@pmu.example` | `stockroom2026` | Everything, including users, AI keys and resetting the demo |
+| Shaheer      | Manager | `shaheer@pmu.example`      | `stockroom2026` | Operations, approvals, agents and the simulator             |
+| Sameer       | Staff   | `sameer@pmu.example`       | `stockroom2026` | Day-to-day stock work and orders                            |
 
 The dashboard opens with a three-step checklist: connect a model, review the agents, run the first analysis.
 

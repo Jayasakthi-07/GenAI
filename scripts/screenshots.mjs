@@ -117,7 +117,7 @@ try {
   // Sign in once and reuse the session (sign-in is rate-limited).
   const authContext = await browser.newContext();
   const login = await authContext.request.post(`${base}/api/v1/auth/login`, {
-    data: { email: `${DEMO_USERS[as] ?? as}@kaveri.example`, password: 'stockroom2026' },
+    data: { email: `${DEMO_USERS[as] ?? as}@pmu.example`, password: 'stockroom2026' },
     headers: { origin: base },
   });
   if (!login.ok()) throw new Error(`Login failed: ${login.status()} ${await login.text()}`);
