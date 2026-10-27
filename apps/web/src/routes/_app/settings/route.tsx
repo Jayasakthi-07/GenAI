@@ -1,7 +1,9 @@
 import type { Permission } from '@stockroom/shared';
 import { createFileRoute, Link, Outlet } from '@tanstack/react-router';
 import {
+  Bell,
   Building2,
+  DatabaseBackup,
   FolderTree,
   ListChecks,
   Palette,
@@ -32,6 +34,7 @@ const GROUPS: Array<{ label: string; sections: Section[] }> = [
     label: 'Personal',
     sections: [
       { to: '/settings/appearance', label: 'Appearance', icon: Palette },
+      { to: '/settings/notifications', label: 'Notifications', icon: Bell },
       { to: '/settings/account', label: 'Account', icon: UserRound },
     ],
   },
@@ -41,6 +44,7 @@ const GROUPS: Array<{ label: string; sections: Section[] }> = [
       { to: '/settings/organization', label: 'Organization', icon: Building2 },
       { to: '/settings/users', label: 'Users & roles', icon: Users, permission: 'users.manage' },
       { to: '/settings/ai', label: 'AI & models', icon: Sparkles, permission: 'agents.configure' },
+      { to: '/settings/data', label: 'Import & export', icon: DatabaseBackup },
     ],
   },
   {

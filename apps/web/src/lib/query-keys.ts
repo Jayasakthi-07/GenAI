@@ -2,6 +2,7 @@
 export const queryKeys = {
   me: ['me'] as const,
   systemInfo: ['system', 'info'] as const,
+  simulation: ['simulation'] as const,
   dashboard: {
     all: ['dashboard'] as const,
     overview: (days: number) => ['dashboard', 'overview', days] as const,
@@ -85,6 +86,20 @@ export const queryKeys = {
     list: (q: object) => ['agent-runs', 'list', q] as const,
     active: ['agent-runs', 'active'] as const,
     detail: (id: string) => ['agent-runs', 'detail', id] as const,
+  },
+  reports: {
+    all: ['reports'] as const,
+    list: (q: object) => ['reports', 'list', q] as const,
+    detail: (id: string) => ['reports', 'detail', id] as const,
+    latest: ['reports', 'latest'] as const,
+  },
+  insights: {
+    all: ['insights'] as const,
+    section: (name: string, q: object) => ['insights', name, q] as const,
+  },
+  notifications: {
+    all: ['notifications'] as const,
+    list: ['notifications', 'list'] as const,
   },
   actions: {
     all: ['actions'] as const,

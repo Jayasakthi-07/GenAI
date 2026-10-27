@@ -4,8 +4,21 @@ import { AppError } from '../domain/errors';
 
 export type Db = InstanceType<typeof PrismaClient>;
 
+/**
+ * Every session runs in UTC. The pg adapter sends and reads timestamps as UTC wall-clock text
+ * without an offset, so a server whose default zone is local (the Windows installer sets
+ * Asia/Calcutta) would store app-written times hours off from what SQL's now() and day
+ * boundaries see.
+ */
+export const SESSION_OPTIONS = '-c TimeZone=UTC';
+
 export function createPrisma(connectionString: string): Db {
-  const adapter = new PrismaPg({ connectionString, max: 10, connectionTimeoutMillis: 5000 });
+  const adapter = new PrismaPg({
+    connectionString,
+    max: 10,
+    connectionTimeoutMillis: 5000,
+    options: SESSION_OPTIONS,
+  });
   return new PrismaClient({ adapter });
 }
 

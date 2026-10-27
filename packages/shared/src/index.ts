@@ -19,3 +19,7 @@ export * from './schemas/ai';
 export * from './schemas/agents';
 export * from './schemas/reports';
 export * from './schemas/assistant';
+export * from './schemas/insights';
+export * from './schemas/notifications';
+export * from './schemas/simulation';
+export * from './schemas/backup';

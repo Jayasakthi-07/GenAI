@@ -1,7 +1,7 @@
 import pg from 'pg';
-import type { Db } from '../db/client';
+import { type Db, SESSION_OPTIONS } from '../db/client';
 import { hashPassword } from '../services/password';
-import { bulkInsert, rupees } from './bulk-insert';
+import { bulkInsert, rupees, suspendIndexes } from './bulk-insert';
 import { addDays, istDay, istInstant } from './calendar';
 import {
   buildCustomers,
@@ -147,12 +147,28 @@ export interface SeedOptions {
   seed: number;
   now?: Date;
   log?: (message: string) => void;
+  /** Tables to leave as they are (the in-app reset keeps AI and agent configuration). */
+  keepTables?: readonly string[];
 }
 
 const APP_TABLES_SQL = `
   SELECT string_agg(format('%I.%I', schemaname, tablename), ', ')
   FROM pg_tables
-  WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`;
+  WHERE schemaname = 'public' AND tablename <> '_prisma_migrations' AND tablename <> ALL($1::text[])`;
+
+/** The large tables, loaded without their secondary indexes and foreign keys (rebuilt afterwards). */
+const BULK_TABLES = [
+  'stock_movements',
+  'sales_order_lines',
+  'sales_orders',
+  'sales_daily',
+  'inventory_snapshots',
+  'purchase_order_lines',
+  'purchase_orders',
+  'goods_receipt_lines',
+  'goods_receipts',
+  'batches',
+];
 
 /** Wipes the application tables and loads the deterministic demo dataset. */
 export async function seedDemoData({
@@ -161,6 +177,7 @@ export async function seedDemoData({
   seed,
   now = new Date(),
   log = () => {},
+  keepTables = [],
 }: SeedOptions) {
   const started = performance.now();
   const lap = (label: string) => log(`${label} (${((performance.now() - started) / 1000).toFixed(1)}s)`);
@@ -177,12 +194,14 @@ export async function seedDemoData({
   const startDay = addDays(today, -HISTORY_DAYS);
   const t0 = istInstant(startDay, 0);
 
-  const pool = new pg.Pool({ connectionString: databaseUrl, max: 2 });
+  const pool = new pg.Pool({ connectionString: databaseUrl, max: 2, options: SESSION_OPTIONS });
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const tables = (await client.query<{ string_agg: string | null }>(APP_TABLES_SQL)).rows[0]?.string_agg;
+    const tables = (await client.query<{ string_agg: string | null }>(APP_TABLES_SQL, [keepTables])).rows[0]
+      ?.string_agg;
     if (tables) await client.query(`TRUNCATE TABLE ${tables} RESTART IDENTITY CASCADE`);
+    const restoreIndexes = await suspendIndexes(client, BULK_TABLES);
 
     // ── Master data ──────────────────────────────────────────────────────────
     await client.query(
@@ -903,6 +922,9 @@ export async function seedDemoData({
         return [key ?? '', Number(year), n + 1];
       }),
     );
+
+    await restoreIndexes();
+    lap('Indexes and constraints rebuilt');
 
     await client.query(
       `INSERT INTO audit_logs (id, actor_type, action, entity_type, summary, after, created_at)

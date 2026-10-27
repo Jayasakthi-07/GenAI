@@ -600,6 +600,33 @@ export class PurchaseOrderService {
     });
   }
 
+  /** Records a new expected delivery date from the supplier on an open order. */
+  async reschedule(actor: Actor, id: string, expectedDate: string, note: string): Promise<void> {
+    assertCan(actor, 'purchase_orders.create');
+    await inTransaction(this.prisma, this.bus, async (tx, emit) => {
+      const po = await this.lockPo(tx, id);
+      if (!OPEN.includes(po.status))
+        throw new AppError('INVALID_STATE_TRANSITION', `${po.number} isn’t open, so its date can’t change.`);
+      const before = isoDay(po.expectedDate);
+      await tx.purchaseOrder.update({
+        where: { id },
+        data: {
+          expectedDate: new Date(`${expectedDate}T00:00:00Z`),
+          notes: [po.notes, note].filter(Boolean).join('\n'),
+        },
+      });
+      await writeAudit(tx, actor, {
+        action: 'po.reschedule',
+        entityType: 'PurchaseOrder',
+        entityId: id,
+        summary: `${po.number} now expected ${expectedDate}${before ? ` (was ${before})` : ''}: ${note}`,
+        before: { expectedDate: before },
+        after: { expectedDate },
+      });
+      emit('po.status_changed', { purchaseOrderId: id, number: po.number, status: po.status });
+    });
+  }
+
   async cancel(actor: Actor, id: string, reason: string): Promise<PoDetail> {
     const po = await this.prisma.purchaseOrder.findUnique({
       where: { id },

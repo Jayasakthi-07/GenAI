@@ -2,12 +2,14 @@ import { ROLE_LABELS } from '@stockroom/shared';
 import { Link, useMatches } from '@tanstack/react-router';
 import { Info, LogOut, Menu, Monitor, Moon, Search, Settings, Sparkles, Sun, UserRound } from 'lucide-react';
 import { assistantPanel } from '@/features/assistant/panel-store';
+import { SimulationIndicator } from '@/features/simulation/indicator';
 import { useMe } from '@/lib/auth';
 import { type ThemePreference, usePreferences } from '@/lib/preferences';
 import { cn, modKey } from '@/lib/utils';
 import { AgentActivity } from '../ai/agent-activity';
 import { ModelChip } from '../ai/model-chip';
 import { IconButton } from '../ui/button';
+import { NotificationBell } from './notification-bell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,6 +69,7 @@ export function TopBar({ onOpenMenu, onOpenPalette, onSignOut }: TopBarProps) {
           <Search strokeWidth={1.75} />
         </IconButton>
 
+        <SimulationIndicator />
         <AgentActivity />
         <button
           type="button"
@@ -82,6 +85,7 @@ export function TopBar({ onOpenMenu, onOpenPalette, onSignOut }: TopBarProps) {
           <span className="hidden lg:inline">Ask</span>
         </button>
         <ModelChip />
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

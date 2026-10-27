@@ -383,6 +383,23 @@ export class AgentService {
     return run?.fingerprint ?? null;
   }
 
+  /**
+   * Agents whose standing outputs don't exist yet (after a fresh seed or a demo reset), so they
+   * run once at startup instead of waiting for their nightly or weekly schedule.
+   */
+  async missingOutputs(): Promise<AgentKey[]> {
+    const [forecasts, classified, reports] = await Promise.all([
+      this.prisma.forecast.count({ where: { isLatest: true } }),
+      this.prisma.product.count({ where: { classifiedAt: { not: null } } }),
+      this.prisma.report.count(),
+    ]);
+    const keys: AgentKey[] = [];
+    if (!forecasts) keys.push('demand_forecaster');
+    if (!classified) keys.push('inventory_optimizer');
+    if (!reports) keys.push('report_writer');
+    return keys;
+  }
+
   /** At boot: anything RUNNING was interrupted; old QUEUED runs lost their job. */
   async recoverInterrupted(): Promise<number> {
     const now = new Date();

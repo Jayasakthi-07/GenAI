@@ -6,6 +6,8 @@ export const systemInfoSchema = z.object({
   title: z.string(),
   version: z.string(),
   node: z.string(),
+  /** DEMO_MODE: the simulator and demo reset are available. */
+  demoMode: z.boolean(),
   /** Present when demo mode is on: the seeded accounts, shown on the sign-in screen for presentations. */
   demo: z
     .object({

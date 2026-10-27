@@ -267,3 +267,31 @@ export function forecastShift(previous: number, next: number, minDaily = 1): num
   if (previous <= 0) return null;
   return round((next - previous) / previous, 4);
 }
+
+/**
+ * Adds product forecasts into one series (e.g. a category's daily units). Means add; the 80 % band
+ * combines in quadrature, assuming the products' errors are independent. Adding the band edges
+ * instead would claim every product misses in the same direction on the same day.
+ */
+export function sumForecasts(
+  items: ReadonlyArray<{
+    points: ReadonlyArray<Pick<ForecastPoint, 'yhat' | 'lo80' | 'hi80'>>;
+    weight?: number;
+  }>,
+  horizon: number,
+): Array<{ yhat: number; lo80: number; hi80: number }> {
+  const acc = Array.from({ length: horizon }, () => ({ yhat: 0, below: 0, above: 0 }));
+  for (const { points, weight = 1 } of items)
+    for (let i = 0; i < Math.min(horizon, points.length); i++) {
+      const p = points[i]!;
+      const a = acc[i]!;
+      a.yhat += p.yhat * weight;
+      a.below += ((p.yhat - p.lo80) * weight) ** 2;
+      a.above += ((p.hi80 - p.yhat) * weight) ** 2;
+    }
+  return acc.map((a) => ({
+    yhat: round(a.yhat, 2),
+    lo80: round(Math.max(0, a.yhat - Math.sqrt(a.below)), 2),
+    hi80: round(a.yhat + Math.sqrt(a.above), 2),
+  }));
+}

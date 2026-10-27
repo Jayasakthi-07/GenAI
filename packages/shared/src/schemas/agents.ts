@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { REPORT_TYPES } from './reports';
 import {
   ACTION_STATUSES,
   ACTION_TYPES,
@@ -118,6 +119,8 @@ export const runAgentSchema = z.object({
   /** Run with this model instead of the routing default. */
   model: modelRefSchema.optional(),
   note: z.string().trim().max(300).optional(),
+  /** Report Writer only: which report to write. */
+  reportType: z.enum(REPORT_TYPES).optional(),
 });
 
 /* ── Runs ──────────────────────────────────────────────────────────────── */

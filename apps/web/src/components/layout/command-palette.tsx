@@ -24,7 +24,7 @@ import { useEffect, useState } from 'react';
 import { assistantPanel } from '@/features/assistant/panel-store';
 import { api } from '@/lib/api';
 import { useCan } from '@/lib/auth';
-import { FOOTER_NAV, NAV } from '@/lib/nav';
+import { FOOTER_NAV, NAV, useNavFilter } from '@/lib/nav';
 import { usePreferences } from '@/lib/preferences';
 import { cn } from '@/lib/utils';
 import { Kbd } from '../ui/misc';
@@ -66,6 +66,7 @@ function useDebounced(value: string, ms = 180) {
 export function CommandPalette({ open, onOpenChange, onSignOut }: CommandPaletteProps) {
   const navigate = useNavigate();
   const can = useCan();
+  const visible = useNavFilter();
   const { setPreference } = usePreferences();
   const [text, setText] = useState('');
   const q = useDebounced(text.trim());
@@ -118,9 +119,7 @@ export function CommandPalette({ open, onOpenChange, onSignOut }: CommandPalette
       }
     });
 
-  const pages = [...NAV.flatMap((g) => g.items), ...FOOTER_NAV].filter(
-    (i) => !i.permission || can(i.permission),
-  );
+  const pages = [...NAV.flatMap((g) => g.items), ...FOOTER_NAV].filter(visible);
   const records = q.length >= 2 ? (results.data ?? []) : [];
   const actions: Array<{ label: string; icon: LucideIcon; go: () => void; keywords: string }> = [];
   if (can('catalog.manage'))

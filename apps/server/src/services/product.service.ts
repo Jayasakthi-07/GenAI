@@ -121,6 +121,7 @@ export class ProductService {
     }
     if (q.status?.length) where.push(Prisma.sql`p.status::text IN (${Prisma.join(q.status)})`);
     if (q.abcClass?.length) where.push(Prisma.sql`p.abc_class::text IN (${Prisma.join(q.abcClass)})`);
+    if (q.xyzClass?.length) where.push(Prisma.sql`p.xyz_class::text IN (${Prisma.join(q.xyzClass)})`);
     if (q.brand) where.push(Prisma.sql`p.brand = ${q.brand}`);
     if (q.tag) where.push(Prisma.sql`${q.tag} = ANY(p.tags)`);
     if (q.trackExpiry !== undefined) where.push(Prisma.sql`p.track_expiry = ${q.trackExpiry}`);

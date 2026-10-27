@@ -25,6 +25,8 @@ import { Skeleton } from '@/components/ui/misc';
 import { SegmentedControl } from '@/components/ui/tabs';
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { dashboardOverviewQuery } from '@/features/dashboard/api';
+import { AgentActivityCard, BriefingCard, DemandOutlookCard } from '@/features/dashboard/briefing-cards';
+import { OnboardingChecklist } from '@/features/dashboard/onboarding';
 import { useMe } from '@/lib/auth';
 import { usePreferences } from '@/lib/preferences';
 import { cn } from '@/lib/utils';
@@ -90,6 +92,8 @@ function DashboardPage() {
         <div
           className={cn('flex flex-col gap-4', query.isFetching && data && 'opacity-80 transition-opacity')}
         >
+          <OnboardingChecklist />
+
           {/* KPIs */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {data ? (
@@ -181,6 +185,14 @@ function DashboardPage() {
               />
             </div>
           )}
+
+          {/* Briefing + agents */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <div className="xl:col-span-2">
+              <BriefingCard />
+            </div>
+            <AgentActivityCard />
+          </div>
 
           {/* Risks */}
           {data && (
@@ -391,6 +403,8 @@ function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+
+          <DemandOutlookCard />
 
           {/* Value trend + top movers */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">

@@ -6,6 +6,8 @@ import {
   type ProductStatus,
   STOCK_STATE_LABELS,
   STOCK_STATES,
+  ABC_CLASSES,
+  XYZ_CLASSES,
 } from '@stockroom/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
@@ -84,6 +86,8 @@ const searchSchema = z.object({
   status: enumListParam(PRODUCT_STATUSES),
   trackExpiry: boolParam,
   tag: textParam,
+  abcClass: enumListParam(ABC_CLASSES),
+  xyzClass: enumListParam(XYZ_CLASSES),
 });
 type Search = z.infer<typeof searchSchema>;
 
@@ -294,7 +298,9 @@ function ProductsPage() {
     search.stockState ||
     search.status ||
     search.trackExpiry !== undefined ||
-    search.tag,
+    search.tag ||
+    search.abcClass ||
+    search.xyzClass,
   );
   const selectedIds = Object.keys(selection).filter((k) => selection[k]);
   const bulkMutation = useBulkProducts();
@@ -402,6 +408,26 @@ function ProductsPage() {
           options={[
             { value: 'true', label: 'Expiry-tracked' },
             { value: 'false', label: 'Not tracked' },
+          ]}
+        />
+        <FilterMenu
+          label="ABC"
+          value={search.abcClass}
+          onChange={(v) => setSearch({ abcClass: v as Search['abcClass'] })}
+          options={[
+            { value: 'A', label: 'A · top 80 % of revenue' },
+            { value: 'B', label: 'B · next 15 %' },
+            { value: 'C', label: 'C · last 5 %' },
+          ]}
+        />
+        <FilterMenu
+          label="XYZ"
+          value={search.xyzClass}
+          onChange={(v) => setSearch({ xyzClass: v as Search['xyzClass'] })}
+          options={[
+            { value: 'X', label: 'X · steady demand' },
+            { value: 'Y', label: 'Y · variable demand' },
+            { value: 'Z', label: 'Z · erratic demand' },
           ]}
         />
         {search.tag && (

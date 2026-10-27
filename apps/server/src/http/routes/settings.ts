@@ -5,6 +5,9 @@ import {
   resetPasswordSchema,
   searchQuerySchema,
   searchResultSchema,
+  settingsBackupSchema,
+  settingsImportResultSchema,
+  settingsImportSchema,
   userCreateSchema,
   userListItemSchema,
   userUpdateSchema,
@@ -96,5 +99,40 @@ export const settingsRoutes: FastifyPluginAsyncZod<{ services: Services }> = asy
       await services.users.resetPassword(actorFor(req), req.params.id, req.body.password);
       return { ok: true as const };
     },
+  );
+
+  const admin = requirePermission('organization.manage');
+  app.get(
+    '/settings/backup',
+    {
+      preHandler: admin,
+      schema: {
+        tags: ['settings'],
+        summary: 'Organization settings, agent configuration and model routing as JSON (no keys or data)',
+        response: { 200: settingsBackupSchema },
+      },
+    },
+    async (req, reply) => {
+      const backup = await services.backup.export(actorFor(req));
+      return reply
+        .header(
+          'Content-Disposition',
+          `attachment; filename="stockroom-settings-${backup.exportedAt.slice(0, 10)}.json"`,
+        )
+        .send(backup);
+    },
+  );
+  app.post(
+    '/settings/backup/import',
+    {
+      preHandler: admin,
+      schema: {
+        tags: ['settings'],
+        summary: 'Compare a settings backup with the current settings, and apply it when apply is true',
+        body: settingsImportSchema,
+        response: { 200: settingsImportResultSchema },
+      },
+    },
+    (req) => services.backup.import(actorFor(req), req.body),
   );
 };

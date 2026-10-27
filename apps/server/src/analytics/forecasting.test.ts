@@ -9,6 +9,7 @@ import {
   holtWinters,
   movingAverage,
   ses,
+  sumForecasts,
 } from './forecasting';
 
 /** Deterministic weekly pattern: weekends sell double. */
@@ -94,5 +95,28 @@ describe('forecastShift', () => {
     expect(forecastShift(10, 15)).toBe(0.5);
     expect(forecastShift(0.2, 0.5)).toBeNull();
     expect(forecastShift(0, 5)).toBeNull();
+  });
+});
+
+describe('sumForecasts', () => {
+  it('adds means and combines bands in quadrature', () => {
+    const a = { points: [{ yhat: 10, lo80: 6, hi80: 14 }] };
+    const b = { points: [{ yhat: 20, lo80: 17, hi80: 23 }] };
+    const [s] = sumForecasts([a, b], 1);
+    expect(s!.yhat).toBe(30);
+    // sqrt(4² + 3²) = 5, narrower than the 7 you'd get by adding the edges.
+    expect(s!.lo80).toBe(25);
+    expect(s!.hi80).toBe(35);
+  });
+
+  it('scales by weight, keeps asymmetric bands and never goes below zero', () => {
+    const [s] = sumForecasts([{ points: [{ yhat: 1, lo80: 0, hi80: 4 }], weight: 0.5 }], 1);
+    expect(s).toEqual({ yhat: 0.5, lo80: 0, hi80: 2 });
+  });
+
+  it('pads short forecasts with zeros up to the horizon', () => {
+    const out = sumForecasts([{ points: [{ yhat: 2, lo80: 1, hi80: 3 }] }], 3);
+    expect(out).toHaveLength(3);
+    expect(out[2]).toEqual({ yhat: 0, lo80: 0, hi80: 0 });
   });
 });

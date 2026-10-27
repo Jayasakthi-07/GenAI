@@ -7,7 +7,7 @@ import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import { API_PREFIX, APP_NAME, APP_TITLE, APP_VERSION } from '@stockroom/shared';
+import { type AgentKey, API_PREFIX, APP_NAME, APP_TITLE, APP_VERSION } from '@stockroom/shared';
 import Fastify, { type FastifyServerOptions, LogController } from 'fastify';
 import {
   jsonSchemaTransform,
@@ -31,12 +31,15 @@ import { authRoutes } from './http/routes/auth';
 import { catalogRoutes } from './http/routes/catalog';
 import { dashboardRoutes, meRoutes } from './http/routes/dashboard';
 import { eventRoutes } from './http/routes/events';
+import { insightRoutes } from './http/routes/insights';
+import { notificationRoutes } from './http/routes/notifications';
 import { operationsRoutes } from './http/routes/operations';
 import { productRoutes } from './http/routes/products';
 import { reportRoutes } from './http/routes/reports';
 import { purchasingRoutes } from './http/routes/purchasing';
 import { salesRoutes } from './http/routes/sales';
 import { settingsRoutes } from './http/routes/settings';
+import { simulationRoutes } from './http/routes/simulation';
 import { stockRoutes } from './http/routes/stock';
 import { systemRoutes } from './http/routes/system';
 import { createServices, type Services, uploadsDir } from './services';
@@ -170,6 +173,9 @@ export async function buildApp({
       await api.register(eventRoutes, { bus });
       await api.register(assistantRoutes, { services });
       await api.register(reportRoutes, { services });
+      await api.register(insightRoutes, { services });
+      await api.register(notificationRoutes, { services });
+      await api.register(simulationRoutes, { services });
     },
     { prefix: API_PREFIX },
   );
@@ -195,10 +201,29 @@ export async function buildApp({
     await app.register(fastifyStatic, { root: webDist, wildcard: false, index: 'index.html' });
   }
 
+  services.notifications.start((err) => app.log.error({ err }, 'Couldn’t deliver a notification'));
+  app.addHook('onClose', () => services.notifications.stop());
+  services.simulation.setLogger((err, message) => app.log.error({ err }, message));
+  app.addHook('onClose', () => services.simulation.halt());
+
   if (startAgents) {
     // Agents replace the interim stock watcher: the Stock Sentinel runs at startup and on its triggers.
-    await orchestrator.start({ startupRuns: ['stock_sentinel'] });
+    await orchestrator.start({
+      startupRuns: ['stock_sentinel', ...(await services.agents.missingOutputs())],
+    });
     app.addHook('onClose', () => orchestrator.stop());
+    services.ai.startHealthMonitor();
+    app.addHook('onClose', async () => services.ai.stopHealthMonitor());
+    services.simulation.setAgentRequester((key, reason) => orchestrator.request(key as AgentKey, reason));
+    await services.simulation.resume();
+    services.demo.onReset({
+      before: () => orchestrator.stop(),
+      after: async () =>
+        orchestrator.start({
+          startupRuns: ['stock_sentinel', ...(await services.agents.missingOutputs())],
+          purgeQueued: true,
+        }),
+    });
   }
 
   return app;

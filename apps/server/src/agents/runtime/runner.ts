@@ -14,6 +14,7 @@ import type { StepInput } from '../../services/agent.service';
 import { localDay } from '../../services/support';
 import type { Analysis, BaseOutput, Handoff, RunContext, ToolContext } from '../types';
 import { buildBriefing, buildSystemPrompt } from './briefing';
+import { anchorsOf, isGrounded } from './grounding';
 import { runLoop } from './loop';
 
 export interface RunnerDeps {
@@ -154,6 +155,27 @@ export async function executeRun(deps: RunnerDeps, runId: string, cancel: AbortS
       if (loop.model) model = { providerKey: loop.model.providerKey, modelId: loop.model.modelId };
       if (loop.output) output = loop.output;
       else fallbackReason = loop.failure ?? 'The model gave no usable answer';
+    }
+    // The model's own words must point at something in the analysis; otherwise the computed
+    // summary and findings stand (the model's explanations and proposals are kept).
+    if (output) {
+      const anchors = anchorsOf(analysis.facts);
+      const findings = output.findings.filter((f) => isGrounded(`${f.title} ${f.detail ?? ''}`, anchors));
+      const summaryOk = isGrounded(output.summary, anchors);
+      if (!summaryOk || findings.length < output.findings.length) {
+        await record({
+          type: 'ANALYSIS',
+          label: summaryOk
+            ? `Dropped ${output.findings.length - findings.length} finding(s) that cited nothing from the analysis`
+            : 'Kept the computed summary: the model’s didn’t cite anything from the analysis',
+          output: { modelSummary: output.summary, dropped: output.findings.length - findings.length },
+        });
+        output = {
+          ...output,
+          summary: summaryOk ? output.summary : analysis.ruleBased.summary,
+          findings: findings.length ? findings : analysis.ruleBased.findings,
+        };
+      }
     }
     const mode = output ? 'AI' : 'RULE_BASED';
 

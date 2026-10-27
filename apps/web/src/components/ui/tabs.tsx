@@ -6,7 +6,8 @@ export const Tabs = TabsPrimitive.Root;
 export function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
-      className={cn('flex items-center gap-1 overflow-x-auto border-b border-hairline', className)}
+      // pb-px leaves room for the triggers' -1px margin, which would otherwise add a vertical scrollbar.
+      className={cn('flex items-center gap-1 overflow-x-auto border-b border-hairline pb-px', className)}
       {...props}
     />
   );

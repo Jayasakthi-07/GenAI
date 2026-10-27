@@ -56,7 +56,7 @@ export class AgentOrchestrator {
     return this.boss !== null;
   }
 
-  async start(opts: { startupRuns?: AgentKey[] } = {}): Promise<void> {
+  async start(opts: { startupRuns?: AgentKey[]; purgeQueued?: boolean } = {}): Promise<void> {
     const { env, services, log, modules, bus } = this.deps;
     const boss = new PgBoss({
       connectionString: env.DATABASE_URL,
@@ -79,6 +79,14 @@ export class AgentOrchestrator {
         expireInSeconds: 3600,
         deleteAfterSeconds: 3 * 86_400,
       });
+      // After a demo reset the runs these jobs point at no longer exist.
+      if (opts.purgeQueued) await boss.deleteQueuedJobs(queueOf(m.key));
+      // A job still active at boot belonged to a process that stopped mid-run. With one run per
+      // agent at a time it would hold that agent's queue until it expired, an hour later.
+      const orphaned = (await boss.findJobs(queueOf(m.key), { limit: 10_000 }))
+        .filter((j) => j.state === 'active')
+        .map((j) => j.id);
+      if (orphaned.length) await boss.fail(queueOf(m.key), orphaned, { message: 'Interrupted by a restart' });
       await boss.work<{ runId: string }>(
         queueOf(m.key),
         { pollingIntervalSeconds: 1, localConcurrency: 1 },
@@ -216,15 +224,20 @@ export class AgentOrchestrator {
       .then((settings) => {
         for (const [key, s] of settings) {
           if (!s.isEnabled || !s.triggers.events.includes(event)) continue;
+          // Events are collected for a fixed window from the first one. Restarting the window on
+          // every event would starve the agent while activity never pauses (a busy day, the simulator).
           const existing = this.buckets.get(key);
-          if (existing) clearTimeout(existing.timer);
-          const bucket: Bucket = existing ?? {
+          if (existing) {
+            existing.events.add(event);
+            if (typeof productId === 'string' && existing.productIds.size < 500)
+              existing.productIds.add(productId);
+            continue;
+          }
+          const bucket: Bucket = {
             timer: setTimeout(() => undefined, 0),
-            events: new Set(),
-            productIds: new Set(),
+            events: new Set([event]),
+            productIds: new Set(typeof productId === 'string' ? [productId] : []),
           };
-          bucket.events.add(event);
-          if (typeof productId === 'string' && bucket.productIds.size < 500) bucket.productIds.add(productId);
           bucket.timer = setTimeout(
             () => {
               this.buckets.delete(key);
@@ -247,6 +260,14 @@ export class AgentOrchestrator {
     const s = (await this.allSettings()).get(key);
     if (!s?.isEnabled) return null;
     return this.enqueue(key, trigger, detail);
+  }
+
+  /** An event-style request from outside the agents (the simulator); respects the enabled switch. */
+  request(key: AgentKey, reason: string): void {
+    if (!this.boss) return;
+    void this.trigger(key, 'EVENT', { reason }).catch((err: unknown) =>
+      this.deps.log.error({ err, agent: key }, 'requested run failed to queue'),
+    );
   }
 
   /** Queues a run. If one is already waiting for this agent, that run is returned instead. */

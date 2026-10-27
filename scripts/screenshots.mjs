@@ -23,7 +23,7 @@ const WIDTHS = [
   { name: '390', width: 390, height: 844, mobile: true },
 ];
 const THEMES = ['light', 'dark'];
-/** `path` may use :product, :po, :so, :supplier, :transfer, :count, :run, :action and :conversation, resolved from the API once. */
+/** `path` may use :product, :po, :so, :supplier, :transfer, :count, :run, :action, :report and :conversation, resolved from the API once. */
 const PAGES = [
   { key: 'login', path: '/login', auth: false },
   { key: 'dashboard', path: '/', full: true },
@@ -59,12 +59,25 @@ const PAGES = [
   { key: 'assistant-panel', path: '/stock', action: 'assistant' },
   { key: 'approval', path: '/approvals?id=:action', full: true },
   { key: 'audit', path: '/audit' },
+  { key: 'analytics', path: '/analytics', full: true },
+  { key: 'analytics-movements', path: '/analytics?tab=movements', full: true },
+  { key: 'analytics-abc', path: '/analytics?tab=abc-xyz', full: true },
+  { key: 'analytics-turnover', path: '/analytics?tab=turnover', full: true },
+  { key: 'analytics-forecast', path: '/analytics?tab=forecast', full: true },
+  { key: 'analytics-suppliers', path: '/analytics?tab=suppliers', full: true },
+  { key: 'analytics-dead', path: '/analytics?tab=dead-stock', full: true },
+  { key: 'reports', path: '/reports' },
+  { key: 'report', path: '/reports/:report', full: true },
+  { key: 'notifications', path: '/', action: 'notifications' },
   { key: 'settings-organization', path: '/settings/organization', full: true },
   { key: 'settings-ai', path: '/settings/ai', full: true },
   { key: 'settings-warehouses', path: '/settings/warehouses' },
   { key: 'settings-categories', path: '/settings/categories' },
   { key: 'settings-appearance', path: '/settings/appearance' },
   { key: 'settings-account', path: '/settings/account' },
+  { key: 'settings-notifications', path: '/settings/notifications' },
+  { key: 'settings-data', path: '/settings/data' },
+  { key: 'simulation', path: '/simulation', full: true },
   { key: 'about', path: '/about' },
   { key: 'design', path: '/design', full: true },
   { key: 'palette', path: '/', action: 'palette' },
@@ -86,6 +99,7 @@ async function resolveIds(request) {
     count: await first('/cycle-counts?pageSize=1'),
     run: await first('/agent-runs?pageSize=1&status=SUCCEEDED&agentKey=replenishment_planner'),
     action: await first('/actions?pageSize=1&status=PENDING'),
+    report: await first('/reports?pageSize=1'),
     conversation: await (async () => {
       const res = await request.get(`${base}/api/v1/assistant/conversations`);
       const list = await res.json();
@@ -139,7 +153,9 @@ try {
           'console',
           (m) =>
             m.type() === 'error' &&
-            problems.push(`${page.key} ${theme} ${size.name}: console error: ${m.text()}`),
+            problems.push(
+              `${page.key} ${theme} ${size.name}: console error: ${m.text()}${m.location().url ? ` (${m.location().url})` : ''}`,
+            ),
         );
         tab.on('pageerror', (e) =>
           problems.push(`${page.key} ${theme} ${size.name}: page error: ${e.message}`),
@@ -154,6 +170,10 @@ try {
         if (page.action === 'assistant') {
           await tab.keyboard.press('Control+J');
           await tab.waitForTimeout(900);
+        }
+        if (page.action === 'notifications') {
+          await tab.getByRole('button', { name: /^Notifications/ }).click();
+          await tab.waitForTimeout(400);
         }
         if (page.action === 'menu') {
           await tab.getByRole('button', { name: 'Open navigation' }).click();

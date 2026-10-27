@@ -58,14 +58,18 @@ export class AnalysisDataService {
     }));
   }
 
-  /** Daily units per product across all warehouses, zero-filled, oldest first, ending today. */
+  /**
+   * Daily units per product across all warehouses, zero-filled, oldest first. Ends yesterday: today
+   * is still in progress, and a half-day of sales would read as a drop in demand.
+   */
   async productDemand(days: number): Promise<{ dates: string[]; series: Map<string, number[]> }> {
     const today = await this.today();
-    const dates = dayRange(today, days);
+    const end = addDays(today, -1);
+    const dates = dayRange(end, days);
     const index = new Map(dates.map((d, i) => [d, i]));
     const rows = await this.prisma.$queryRaw<Array<{ product_id: string; date: Date; q: number }>>`
       SELECT product_id, date, SUM(quantity)::int AS q FROM sales_daily
-      WHERE date > ${today}::date - ${days}::int AND date <= ${today}::date
+      WHERE date > ${end}::date - ${days}::int AND date <= ${end}::date
       GROUP BY 1, 2`;
     const series = new Map<string, number[]>();
     for (const r of rows) {

@@ -57,7 +57,14 @@ export const systemRoutes: FastifyPluginAsyncZod<{ prisma: Db; demoMode: boolean
         }));
         demo = accounts.length ? { password: DEMO_PASSWORD, accounts } : null;
       }
-      return { name: APP_NAME, title: APP_TITLE, version: APP_VERSION, node: process.versions.node, demo };
+      return {
+        name: APP_NAME,
+        title: APP_TITLE,
+        version: APP_VERSION,
+        node: process.versions.node,
+        demoMode,
+        demo,
+      };
     },
   );
 };

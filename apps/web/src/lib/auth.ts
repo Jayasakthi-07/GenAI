@@ -57,8 +57,14 @@ export function useLogout() {
 }
 
 export function useChangePassword() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: ChangePasswordRequest) => api.post<{ ok: true }>('/auth/change-password', body),
+    // A temporary password is replaced, so the first-sign-in prompt closes.
+    onSuccess: () =>
+      qc.setQueryData<MeResponse>(queryKeys.me, (me) =>
+        me ? { ...me, user: { ...me.user, mustChangePassword: false } } : me,
+      ),
   });
 }
 

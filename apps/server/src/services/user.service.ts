@@ -49,7 +49,12 @@ export class UserService {
     });
     if (!user) throw unauthenticated();
     const current = userPreferencesSchema.parse(user.preferences ?? {});
-    const next = userPreferencesSchema.parse({ ...current, ...patch });
+    const next = userPreferencesSchema.parse({
+      ...current,
+      ...patch,
+      notifications: { ...current.notifications, ...patch.notifications },
+      onboarding: { ...current.onboarding, ...patch.onboarding },
+    });
     await this.prisma.user.update({ where: { id: actor.userId }, data: { preferences: next } });
     return next;
   }

@@ -4,8 +4,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { actionCountsQuery } from '@/features/agents/api';
 import { alertCountsQuery } from '@/features/alerts/api';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { useCan } from '@/lib/auth';
-import { FOOTER_NAV, NAV, type NavItem } from '@/lib/nav';
+import { FOOTER_NAV, NAV, type NavItem, useNavFilter } from '@/lib/nav';
 import { cn } from '@/lib/utils';
 import { IconButton } from '../ui/button';
 import { Tooltip } from '../ui/menus';
@@ -109,7 +108,7 @@ interface SidebarProps {
 }
 
 export function SidebarContent({ collapsed = false, onToggle, onNavigate, className }: SidebarProps) {
-  const can = useCan();
+  const visible = useNavFilter();
   return (
     <div className={cn('flex h-full flex-col', className)}>
       <div className={cn('flex h-14 shrink-0 items-center gap-2.5 px-4', collapsed && 'justify-center px-0')}>
@@ -119,7 +118,7 @@ export function SidebarContent({ collapsed = false, onToggle, onNavigate, classN
 
       <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-4" aria-label="Main">
         {NAV.map((group) => {
-          const items = group.items.filter((item) => !item.permission || can(item.permission));
+          const items = group.items.filter(visible);
           if (!items.length) return null;
           return (
             <div key={group.label} className="mb-5">

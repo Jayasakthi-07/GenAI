@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Bot, Inbox, Sparkles } from 'lucide-react';
+import { useEffect } from 'react';
 import { z } from 'zod';
 import { AiMarker } from '@/components/ai/ai-marker';
 import { EmptyState, ErrorState } from '@/components/feedback/states';
@@ -16,6 +17,7 @@ import { NetworkView } from '@/features/agents/network-view';
 import { RunsList } from '@/features/agents/runs-list';
 import { useCan } from '@/lib/auth';
 import { cleanSearch } from '@/lib/list-search';
+import { usePreferences } from '@/lib/preferences';
 
 const searchSchema = z.object({
   tab: z.enum(['team', 'activity', 'network']).optional().catch(undefined),
@@ -37,6 +39,13 @@ function AgentsHub() {
   const ai = useQuery(aiStatusQuery);
   const graph = useQuery({ ...agentGraphQuery, enabled: tab === 'network' });
   const pending = counts.data?.pending ?? 0;
+  const { preferences, setPreference } = usePreferences();
+  // Opening this page completes the “Review your agents” step of the first-run checklist.
+  useEffect(() => {
+    if (!preferences.onboarding.reviewedAgents)
+      setPreference('onboarding', { ...preferences.onboarding, reviewedAgents: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per visit
+  }, []);
 
   return (
     <Page>

@@ -6,8 +6,8 @@ catches anomalies, scores suppliers and writes reports, while people approve con
 
 - **Source of truth:** `docs/PROJECT_BRIEF.md`. Re-read the relevant section before starting each phase.
 - **Plan and status:** `docs/PLAN.md` (architecture, schema, agents, API, phase checklist). Tick items as they land.
-- **Current phase:** Phases 2–5 (core inventory, LLM gateway, agent runtime, analytics and all agents incl. the
-  Assistant) complete and committed. Next: Phase 6 (insights, reports, notifications, simulation), then 7.
+- **Current phase:** Phases 2–6 (core inventory, LLM gateway, agent runtime, analytics and agents, insights, reports,
+  notifications, simulation and demo reset) complete and committed. Next: Phase 7 (polish and acceptance).
 
 ## Commands (pnpm 12, Node 24 LTS; all scripts cross-platform)
 
@@ -74,6 +74,9 @@ docs/             brief, plan, architecture, agents, demo script
   PostgreSQL extensions (Windows Smart App Control blocked `pg_trgm`; see "Phase 2 decisions").
 - Demo data lives in `apps/server/src/demo/` (catalog, simulator, plants, bulk insert). Planted situations must stay
   date-independent: after changing the simulator, dry-run several `--date=` values; `seed.test.ts` guards invariants.
+- Every database connection runs in UTC: pass `SESSION_OPTIONS` (`apps/server/src/db/client.ts`) to any new pg pool.
+  The pg adapter sends timestamps as UTC wall-clock text; a local server default shifts them against SQL's `now()`.
+- Day-based figures use complete days (history ends yesterday); today is still in progress.
 - Never put `NODE_ENV` in `.env` (Vite would bundle development React).
 - Ports are `API_PORT` / `WEB_PORT`, never `PORT` (tools inject a generic `PORT` into child processes).
 - `tsx watch` hangs under `concurrently` (non-TTY): the server dev script is `node --watch --import tsx`.

@@ -1,11 +1,16 @@
 import type { Permission } from '@stockroom/shared';
+import { useQuery } from '@tanstack/react-query';
+import { systemInfoQueryOptions, useCan } from './auth';
 import {
   ArrowLeftRight,
   Bell,
   Bot,
+  ChartColumn,
+  FileText,
   Boxes,
   ClipboardCheck,
   Factory,
+  FlaskConical,
   History,
   Inbox,
   MessagesSquare,
@@ -29,6 +34,8 @@ export interface NavItem {
   keywords?: string[];
   /** Live count shown next to the label. */
   badge?: 'alerts' | 'approvals';
+  /** Only in demo mode (DEMO_MODE=true). */
+  demoOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -37,8 +44,7 @@ export interface NavGroup {
 }
 
 /**
- * Sidebar navigation. Only pages that exist are listed; the remaining Insights pages are added
- * here as their phases ship.
+ * Sidebar navigation. Only pages that exist are listed.
  */
 export const NAV: NavGroup[] = [
   {
@@ -124,11 +130,31 @@ export const NAV: NavGroup[] = [
         icon: MessagesSquare,
         keywords: ['chat', 'ask', 'question', 'ai', 'help'],
       },
+      {
+        label: 'Simulation',
+        to: '/simulation',
+        icon: FlaskConical,
+        permission: 'simulation.control',
+        demoOnly: true,
+        keywords: ['demo', 'scenario', 'festive', 'rush', 'delay', 'shrinkage', 'reset'],
+      },
     ],
   },
   {
     label: 'Insights',
     items: [
+      {
+        label: 'Analytics',
+        to: '/analytics',
+        icon: ChartColumn,
+        keywords: ['insights', 'valuation', 'abc', 'xyz', 'turnover', 'forecast', 'dead stock', 'charts'],
+      },
+      {
+        label: 'Reports',
+        to: '/reports',
+        icon: FileText,
+        keywords: ['briefing', 'weekly summary', 'pdf', 'csv', 'export'],
+      },
       {
         label: 'Audit log',
         to: '/audit',
@@ -164,3 +190,10 @@ export const NAV: NavGroup[] = [
 export const FOOTER_NAV: NavItem[] = [
   { label: 'About', to: '/about', icon: Info, keywords: ['version', 'help'] },
 ];
+
+/** Which navigation entries this person sees: by permission, and demo-only pages in demo mode. */
+export function useNavFilter() {
+  const can = useCan();
+  const demoMode = useQuery(systemInfoQueryOptions).data?.demoMode ?? false;
+  return (item: NavItem) => (!item.permission || can(item.permission)) && (!item.demoOnly || demoMode);
+}

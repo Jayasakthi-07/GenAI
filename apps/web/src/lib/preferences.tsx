@@ -1,4 +1,4 @@
-import type { UserPreferences } from '@stockroom/shared';
+import { type UserPreferences, userPreferencesSchema } from '@stockroom/shared';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type ThemePreference = UserPreferences['theme'];
@@ -30,7 +30,7 @@ function writeLocal(prefs: UserPreferences) {
   }
 }
 
-const DEFAULTS: UserPreferences = { theme: 'system', density: 'comfortable', sidebarCollapsed: false };
+const DEFAULTS: UserPreferences = userPreferencesSchema.parse({});
 
 interface PreferencesContextValue {
   preferences: UserPreferences;

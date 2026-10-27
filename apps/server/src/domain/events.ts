@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import type { SimulationState } from '@stockroom/shared';
 
 /**
  * Domain events. Services emit them after their transaction commits; the orchestrator
@@ -40,18 +41,19 @@ export interface DomainEvents {
   'forecast.updated': { count: number };
   'report.created': { reportId: string; type: string };
   'notification.created': {
-    notificationId: string;
+    /** Null when the recipient wants a toast but not a stored notification. */
+    notificationId: string | null;
     userId: string;
+    type: string;
     title: string;
+    body: string | null;
     severity: string | null;
     link: string | null;
+    toast: boolean;
   };
-  'simulation.state': {
-    running: boolean;
-    speed: number;
-    scenario: string | null;
-    simulatedDay: string | null;
-  };
+  'simulation.state': SimulationState;
+  /** The demo data was replaced; every client refetches everything. */
+  'demo.reset': { today: string };
   'ai.status': { providerKey: string; health: string };
 }
 

@@ -1310,12 +1310,25 @@ Conventions:
 
 ### Phase 6 — Insights, reports, simulation
 
-- [ ] Analytics pages (valuation, movements, ABC–XYZ matrix, turnover, forecast accuracy, supplier performance, dead stock) with filters and drill-down
-- [ ] Reports: daily briefing and weekly summary, history, viewer, PDF/CSV
-- [ ] Notifications (bell, toasts, preferences), command palette (navigate, find records, actions, ask the Assistant)
-- [ ] Import/export settings page, reset demo data
-- [ ] Simulation panel: start/stop, speed, scenarios (Festive rush, Supplier delay, Shrinkage incident, Demand drop), auto-send/receive in demo mode, one-click reset
-- [ ] Onboarding checklist and no-AI guidance; commit
+- [x] Analytics pages (valuation, movements, ABC–XYZ matrix, turnover, forecast accuracy, supplier performance, dead stock) with filters and drill-down
+- [x] Reports: daily briefing and weekly summary, history, viewer, PDF/CSV
+- [x] Notifications (bell, toasts, preferences), command palette (navigate, find records, actions, ask the Assistant)
+- [x] Import/export settings page, reset demo data
+- [x] Simulation panel: start/stop, speed, scenarios (Festive rush, Supplier delay, Shrinkage incident, Demand drop), auto-send/receive in demo mode, one-click reset
+- [x] Onboarding checklist and no-AI guidance; commit
+
+**Phase 6 decisions:**
+
+- Analytics are one page, `/analytics`, with a tab per view (the plan's `/analytics/*`). The toolbar offers only the filters the open tab honours. ABC–XYZ cells drill down to the product list (new `xyzClass` filter). The sales-and-forecast chart sums product forecasts with the 80 % bands combined in quadrature (`sumForecasts`, tested): adding the band edges would assume every product misses the same way on the same day.
+- Complete days only: the Demand Forecaster's history and the sales lines in charts and briefings end yesterday. A half-day of sales read as a drop in demand.
+- Reports print INR instead of ₹ in PDFs (the bundled Inter subset has no rupee glyph). `GET /reports/latest` feeds the dashboard's briefing card.
+- Notifications are stored per person (latest 200) and announced on the bus. Recipients are chosen by permission and preference (bell and pop-up per type). Alerts and proposals arriving within 3 s are grouped into one notification. Preference patches merge per key: Zod 4 applies defaults inside `.partial()`, which had silently reset every preference a patch left out.
+- The simulator sells through `SalesService` and receives through `PurchaseOrderService` as the `simulator` actor, so the ledger, audit log, events and agent triggers behave as for real activity. Each 5 s tick sells 1–8 simulated hours of each location's 28-day average demand, at real timestamps. Approved orders are sent automatically; orders sent while it runs arrive after their lead time scaled to its speed. Orders sent earlier keep their real dates, so planted situations survive. Its running state persists, so it resumes after a server restart. Demo mode only.
+- Scenarios: Festive rush (4× festive categories, 1.8× the rest, 48 simulated hours). Supplier delay: the supplier with the most open orders gets them rescheduled into the past (new `PurchaseOrderService.reschedule`, audited) and its deliveries held for 72 h; the Supplier Analyst is asked to look. Shrinkage: one-off `SHRINKAGE` adjustments at a warehouse that has stock. Demand drop: one category at a third for 72 h.
+- Demo reset (`POST /demo/reset`, admin, demo mode) re-runs the seed but keeps `provider_configs`, `model_capabilities`, `app_settings` and `agent_definitions`. Sessions and personal preferences are restored by email, so nobody is signed out. It stops the simulator and scheduler, purges queued agent jobs, then runs the Sentinel. The seed now drops the big tables' secondary indexes and foreign keys inside its transaction and rebuilds them after loading: 126 s → about 47 s.
+- Settings backup (`/settings/backup`, admin) holds organization settings, agent configuration and routing, never keys or data. Restoring previews the differences first, then applies them through the normal services (validated and audited), with warnings for providers that aren't enabled here.
+- Fixes found while exercising the simulator. Every database session runs in UTC (`SESSION_OPTIONS`): the pg adapter sends timestamps as UTC wall-clock text, and the Windows installer's Asia/Calcutta default put app-written times 5 h 30 m away from SQL's `now()` and day boundaries. Event triggers collect for a fixed window from the first event instead of restarting it on every event, which starved agents while activity never paused. At boot, pg-boss jobs left active by a stopped process are failed, since one per agent would block that agent's queue for an hour.
+- First run: a dashboard checklist (connect a model → review the agents → run the first analysis) with guidance when no model is connected. Signing in with a temporary password opens a prompt to choose one that can't be dismissed.
 
 ### Phase 7 — Polish and acceptance
 

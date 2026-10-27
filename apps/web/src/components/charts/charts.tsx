@@ -5,9 +5,11 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
   Line,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -282,6 +284,99 @@ export function DonutChart({
           {centerLabel && <span className="text-xs text-fg-tertiary">{centerLabel}</span>}
         </div>
       )}
+    </div>
+  );
+}
+
+interface ForecastChartProps {
+  data: Array<{
+    date: string;
+    actual: number | null;
+    forecast: number | null;
+    low: number | null;
+    high: number | null;
+  }>;
+  height?: number;
+  formatValue?: Formatter;
+  formatTick?: (value: string) => string;
+  formatLabel?: (label: string) => string;
+  /** Where actuals end and the forecast begins. */
+  today?: string;
+  ariaLabel: string;
+}
+
+/** Actual demand, then the forecast as a dashed line inside its shaded 80 % band. */
+export function ForecastChart({
+  data,
+  height = 260,
+  formatValue = (v) => v.toLocaleString('en-IN'),
+  formatTick,
+  formatLabel,
+  today,
+  ariaLabel,
+}: ForecastChartProps) {
+  const rows = data.map((d) => ({ ...d, band: d.low !== null && d.high !== null ? [d.low, d.high] : null }));
+  return (
+    <div className="w-full" style={{ height }} role="img" aria-label={ariaLabel}>
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
+          <XAxis dataKey="date" {...axisProps} tickFormatter={formatTick} minTickGap={24} />
+          <YAxis {...axisProps} width={56} tickFormatter={formatValue} />
+          <Tooltip
+            cursor={{ stroke: 'var(--hairline-strong)', strokeWidth: 1 }}
+            content={({ active, payload, label }) => (
+              <ChartTooltip
+                active={active}
+                // The band is shown as its own "low – high" line instead of a raw array.
+                payload={(payload as unknown as TooltipPayloadItem[] | undefined)?.map((p) =>
+                  p.dataKey === 'band' && Array.isArray(p.value)
+                    ? {
+                        ...p,
+                        value: `${formatValue(Number(p.value[0]))} – ${formatValue(Number(p.value[1]))}`,
+                      }
+                    : p,
+                )}
+                label={label}
+                formatValue={formatValue}
+                formatLabel={formatLabel}
+              />
+            )}
+          />
+          {today && <ReferenceLine x={today} stroke="var(--hairline-strong)" strokeDasharray="2 3" />}
+          <Area
+            type="monotone"
+            dataKey="band"
+            name="Likely range (80 %)"
+            stroke="none"
+            fill="var(--chart-1)"
+            fillOpacity={0.12}
+            isAnimationActive={false}
+            activeDot={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="actual"
+            name="Actual"
+            stroke="var(--chart-2)"
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 3.5, strokeWidth: 0 }}
+            isAnimationActive={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="forecast"
+            name="Forecast"
+            stroke="var(--chart-1)"
+            strokeWidth={1.75}
+            strokeDasharray="4 4"
+            dot={false}
+            activeDot={{ r: 3.5, strokeWidth: 0 }}
+            isAnimationActive={false}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
     </div>
   );
 }

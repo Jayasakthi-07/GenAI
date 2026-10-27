@@ -15,6 +15,7 @@ import { type Actor, assertCan } from '../domain/actor';
 import { writeAudit } from '../domain/audit';
 import { notFound } from '../domain/errors';
 import type { EventBus } from '../domain/events';
+import { toCsv } from '../lib/csv';
 import type { DashboardService } from './dashboard.service';
 import { getOrgSettings, localDay, pageArgs, pageMeta, startOfLocalDay } from './support';
 
@@ -74,12 +75,13 @@ export class ReportService {
     const salesRows = await this.prisma.$queryRaw<
       Array<{ revenue: number; prev_revenue: number; units: number; prev_units: number }>
     >`
-      SELECT COALESCE(SUM(revenue) FILTER (WHERE date > ${today}::date - ${days}::int), 0)::float8 AS revenue,
-             COALESCE(SUM(revenue) FILTER (WHERE date <= ${today}::date - ${days}::int), 0)::float8 AS prev_revenue,
-             COALESCE(SUM(quantity) FILTER (WHERE date > ${today}::date - ${days}::int), 0)::int AS units,
-             COALESCE(SUM(quantity) FILTER (WHERE date <= ${today}::date - ${days}::int), 0)::int AS prev_units
+      SELECT COALESCE(SUM(revenue) FILTER (WHERE date >= ${today}::date - ${days}::int), 0)::float8 AS revenue,
+             COALESCE(SUM(revenue) FILTER (WHERE date < ${today}::date - ${days}::int), 0)::float8 AS prev_revenue,
+             COALESCE(SUM(quantity) FILTER (WHERE date >= ${today}::date - ${days}::int), 0)::int AS units,
+             COALESCE(SUM(quantity) FILTER (WHERE date < ${today}::date - ${days}::int), 0)::int AS prev_units
       FROM sales_daily
-      WHERE date > ${today}::date - ${2 * days}::int AND date <= ${today}::date`;
+      -- Sales use complete days (a morning briefing covers yesterday), compared with the period before.
+      WHERE date >= ${today}::date - ${2 * days}::int AND date < ${today}::date`;
     const s = salesRows[0] ?? { revenue: 0, prev_revenue: 0, units: 0, prev_units: 0 };
 
     const [createdAlerts, resolved, pos, received, runs, actions, pending, risks] = await Promise.all([
@@ -239,6 +241,40 @@ export class ReportService {
     const r = await this.prisma.report.findUnique({ where: { id } });
     if (!r) throw notFound('Report');
     return { ...this.toItem(r), content: r.content as ReportContent };
+  }
+
+  /** The report with the organization's name, for PDF export. */
+  async forExport(id: string): Promise<{ report: ReportDto; organization: string }> {
+    const [report, org] = await Promise.all([this.get(id), getOrgSettings(this.prisma)]);
+    return { report, organization: org.name };
+  }
+
+  /** Every figure in the report as rows: section, item, value, detail. */
+  async csv(id: string): Promise<{ filename: string; body: string }> {
+    const r = await this.get(id);
+    const c = r.content;
+    const rows: Array<Array<string | number>> = [
+      ...c.kpis.map((k) => ['KPI', k.label, k.value, k.change ?? '']),
+      ...c.changes.map((line) => ['Change', line, '', '']),
+      ...c.risks.map((x) => ['Risk', x.title, x.severity, x.detail]),
+      ...c.agentActivity.map((a) => [
+        'Agent activity',
+        a.agent,
+        a.runs,
+        `${a.aiRuns} with AI, ${a.proposals} proposals, ${a.executed} executed, ${a.rejected} rejected`,
+      ]),
+      ...c.pendingDecisions.map((p) => ['Waiting for a decision', p.title, p.agent, p.summary]),
+      [
+        'Narrative',
+        r.narrativeSource === 'AI' ? `AI (${r.modelUsed ?? 'model'})` : 'Rule-based',
+        '',
+        c.narrative,
+      ],
+    ];
+    return {
+      filename: `${r.type === 'WEEKLY_SUMMARY' ? 'weekly-summary' : 'daily-briefing'}-${r.periodEnd.slice(0, 10)}.csv`,
+      body: toCsv(['Section', 'Item', 'Value', 'Detail'], rows),
+    };
   }
 
   async latest(type?: ReportType): Promise<ReportDto | null> {

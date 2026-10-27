@@ -520,6 +520,41 @@ export class AiService {
     };
   }
 
+  private monitor: NodeJS.Timeout | null = null;
+
+  /**
+   * Re-checks local providers in the background, so the status recovers by itself when Ollama
+   * is started again (and turns to rule-based when it stops). Cloud providers are only checked
+   * when they're used, to spare their rate limits.
+   */
+  startHealthMonitor(intervalMs = 30_000) {
+    const check = async () => {
+      for (const p of await this.registry.list()) {
+        if (!p.isEnabled || !p.isLocal || p.kind === 'MOCK') continue;
+        const entry = await this.registry.get(p.key);
+        if (!entry) continue;
+        const h = await entry.provider
+          .healthCheck()
+          .catch((e: unknown) => ({ status: 'offline' as const, message: String(e), latencyMs: null }));
+        await this.setHealth(
+          p.key,
+          h.status === 'connected' ? 'CONNECTED' : 'OFFLINE',
+          h.status === 'connected' ? null : h.message,
+          h.latencyMs,
+        );
+      }
+    };
+    const run = () => void check().catch(() => {});
+    run();
+    this.monitor = setInterval(run, intervalMs);
+    this.monitor.unref();
+  }
+
+  stopHealthMonitor() {
+    if (this.monitor) clearInterval(this.monitor);
+    this.monitor = null;
+  }
+
   private async setHealth(
     key: string,
     health: 'CONNECTED' | 'OFFLINE',

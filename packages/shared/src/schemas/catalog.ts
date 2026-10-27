@@ -170,6 +170,7 @@ export const productListQuerySchema = paginationQuerySchema.extend({
   tag: z.string().trim().max(40).optional(),
   trackExpiry: booleanQuery,
   abcClass: multiValue(z.enum(ABC_CLASSES)),
+  xyzClass: multiValue(z.enum(XYZ_CLASSES)),
 });
 export type ProductListQuery = z.infer<typeof productListQuerySchema>;
 

@@ -6,6 +6,7 @@ import { AssistantPanel } from '@/components/ai/assistant-panel';
 import { CommandPalette } from '@/components/layout/command-palette';
 import { Sidebar, SidebarContent } from '@/components/layout/sidebar';
 import { TopBar } from '@/components/layout/top-bar';
+import { MustChangePasswordDialog } from '@/features/account/must-change-password';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ApiError } from '@/lib/api';
 import { meQueryOptions, useLogout, useMe, useSavePreferences } from '@/lib/auth';
@@ -100,6 +101,7 @@ function AppLayout() {
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onSignOut={signOut} />
       <AssistantPanel />
+      <MustChangePasswordDialog onSignOut={signOut} />
     </div>
   );
 }

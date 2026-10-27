@@ -1,5 +1,7 @@
 import { type QueryKey, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { useEffect, useSyncExternalStore } from 'react';
+import { toast } from 'sonner';
 import { aiKeys } from '@/features/ai/api';
 import { API_PREFIX } from '@stockroom/shared';
 import { INVENTORY_ROOTS, queryKeys } from './query-keys';
@@ -13,7 +15,14 @@ const INVALIDATES: Record<string, readonly QueryKey[]> = {
   'sale.recorded': [q.salesOrders.all, q.dashboard.all],
   'so.status_changed': [q.salesOrders.all, q.stock.all, q.products.all, q.dashboard.all],
   'po.status_changed': [q.purchaseOrders.all, q.stock.all, q.products.all, q.suppliers.all, q.dashboard.all],
-  'po.received': [q.purchaseOrders.all, q.stock.all, q.products.all, q.suppliers.all, q.dashboard.all],
+  'po.received': [
+    q.purchaseOrders.all,
+    q.stock.all,
+    q.products.all,
+    q.suppliers.all,
+    q.dashboard.all,
+    q.insights.all,
+  ],
   'transfer.status_changed': [q.transfers.all, q.stock.all],
   'count.completed': [q.cycleCounts.all, q.stock.all],
   'alert.created': [q.alerts.all, q.dashboard.all],
@@ -35,7 +44,18 @@ const INVALIDATES: Record<string, readonly QueryKey[]> = {
   'agent.run.finished': [...agentLists, q.alerts.all],
   'agent.run.handoff': [q.agents.graph],
   'ai.status': [aiKeys.all],
+  'forecast.updated': [q.insights.all, q.dashboard.all],
+  'report.created': [q.reports.all, q.dashboard.all],
+  'notification.created': [q.notifications.all],
 };
+
+interface NotificationEvent {
+  title: string;
+  body: string | null;
+  severity: string | null;
+  link: string | null;
+  toast: boolean;
+}
 
 /* ── Live step labels ("Comparing 3 suppliers…") for runs in progress ─── */
 const steps = new Map<string, string>();
@@ -74,6 +94,7 @@ export const useLiveConnection = () =>
  */
 export function useLiveEvents() {
   const qc = useQueryClient();
+  const router = useRouter();
   useEffect(() => {
     const source = new EventSource(`${API_PREFIX}/events`);
     const pending = new Map<string, QueryKey>();
@@ -107,6 +128,27 @@ export function useLiveEvents() {
         invalidate(keys, name === 'stock.changed' ? 1000 : 400);
       });
     }
+    // Each simulator tick carries its full state; no refetch needed.
+    source.addEventListener('simulation.state', (e: MessageEvent<string>) => {
+      qc.setQueryData(q.simulation, data(e));
+    });
+    // Someone reset the demo data: everything on screen is out of date.
+    source.addEventListener('demo.reset', () => {
+      void qc.invalidateQueries();
+      toast.info('The demo data was reset', { description: 'Everything on screen has been refreshed.' });
+    });
+    // The server sends each person only their own notifications; some also pop up as a toast.
+    source.addEventListener('notification.created', (e: MessageEvent<string>) => {
+      const p = data(e) as Partial<NotificationEvent>;
+      if (!p.toast || !p.title) return;
+      const urgent = p.severity === 'CRITICAL' || p.severity === 'HIGH';
+      const link = p.link;
+      (urgent ? toast.warning : toast)(p.title, {
+        description: p.body ?? undefined,
+        duration: urgent ? 8000 : 5000,
+        action: link ? { label: 'Open', onClick: () => void router.navigate({ href: link }) } : undefined,
+      });
+    });
     // Step events refresh only the run being watched, quickly, so its timeline grows live.
     source.addEventListener('agent.run.step', (e: MessageEvent<string>) => {
       const p = data(e);
@@ -129,5 +171,5 @@ export function useLiveEvents() {
       if (timer) clearTimeout(timer);
       source.close();
     };
-  }, [qc]);
+  }, [qc, router]);
 }

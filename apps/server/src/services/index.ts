@@ -12,12 +12,16 @@ import { AiService } from './ai.service';
 import { AlertService } from './alert.service';
 import { AuditService } from './audit.service';
 import { AuthService } from './auth.service';
+import { BackupService } from './backup.service';
 import { CatalogService } from './catalog.service';
 import { ChatService } from './chat.service';
 import { CycleCountService } from './cycle-count.service';
+import { DemoService } from './demo.service';
 import { DashboardService } from './dashboard.service';
 import { ForecastService } from './forecast.service';
+import { InsightsService } from './insights.service';
 import { InventoryService } from './inventory.service';
+import { NotificationService } from './notification.service';
 import { PlanningService } from './planning.service';
 import { ProductService } from './product.service';
 import { PurchaseOrderService } from './purchase-order.service';
@@ -28,6 +32,7 @@ import { SettingsService } from './settings.service';
 import { SupplierService } from './supplier.service';
 import { TransferService } from './transfer.service';
 import { UserService } from './user.service';
+import { SimulationService } from '../simulation/simulator';
 
 export interface ServiceDeps {
   prisma: Db;
@@ -49,6 +54,9 @@ export function createServices({ prisma, bus, env }: ServiceDeps) {
   const transfers = new TransferService(prisma, bus, inventory);
   const cycleCounts = new CycleCountService(prisma, bus, inventory, catalog);
   const dashboard = new DashboardService(prisma);
+  const analysis = new AnalysisDataService(prisma);
+  const sales = new SalesService(prisma, bus, inventory);
+  const simulation = new SimulationService(prisma, bus, { sales, purchaseOrders, inventory }, env.DEMO_MODE);
   const services = {
     ai: new AiService(prisma, bus, gateway, registry),
     /** The model router, for the agent runtime. */
@@ -61,7 +69,14 @@ export function createServices({ prisma, bus, env }: ServiceDeps) {
     products,
     suppliers,
     purchaseOrders,
-    sales: new SalesService(prisma, bus, inventory),
+    sales,
+    simulation,
+    demo: new DemoService(
+      prisma,
+      bus,
+      { simulation, suppliers },
+      { available: env.DEMO_MODE, databaseUrl: env.DATABASE_URL, seed: env.SEED },
+    ),
     transfers,
     cycleCounts,
     alerts: new AlertService(prisma, bus),
@@ -69,17 +84,26 @@ export function createServices({ prisma, bus, env }: ServiceDeps) {
     settings: new SettingsService(prisma, bus),
     search: new SearchService(prisma),
     planning: new PlanningService(prisma),
-    analysis: new AnalysisDataService(prisma),
+    analysis,
+    insights: new InsightsService(prisma, { catalog, analysis, suppliers }),
     forecasts: new ForecastService(prisma, bus),
     reports: new ReportService(prisma, bus, dashboard),
     chat: new ChatService(prisma),
+    notifications: new NotificationService(prisma, bus),
     agents: new AgentService(prisma, bus, agentModuleMap()),
     actions: new ActionService(prisma, bus, { purchaseOrders, transfers, products, cycleCounts, suppliers }),
   };
   // Supplier scores are derived from purchase orders and receipts.
   bus.on('po.status_changed', () => suppliers.invalidateScores());
   bus.on('po.received', () => suppliers.invalidateScores());
-  return services;
+  return {
+    ...services,
+    backup: new BackupService(prisma, {
+      settings: services.settings,
+      agents: services.agents,
+      ai: services.ai,
+    }),
+  };
 }
 
 export type Services = ReturnType<typeof createServices>;

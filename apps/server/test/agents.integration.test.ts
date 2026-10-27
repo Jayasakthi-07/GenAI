@@ -152,7 +152,7 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
       const alerts = toolResult<{ total: number }>(req, 'list_open_alerts');
       return {
         content: JSON.stringify({
-          summary: `Reviewed ${alerts?.total ?? 0} open alerts.`,
+          summary: `Ponni Rice 5 kg is low at CHN; reviewed ${alerts?.total ?? 0} open alerts.`,
           findings: [
             { title: 'Rice is low at CHN', detail: '2.4 days of cover vs 4-day lead time', severity: 'high' },
           ],

@@ -86,6 +86,7 @@ export const agentRoutes: FastifyPluginAsyncZod<{
         userName: user?.name ?? null,
         note: req.body.note ?? null,
         model: req.body.model ?? null,
+        ...(req.body.reportType ? { reportType: req.body.reportType } : {}),
       });
       return reply.code(202).send(r);
     },
