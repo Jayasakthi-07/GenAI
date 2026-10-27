@@ -161,3 +161,30 @@ test('a temporary password must be replaced before going on', async ({ browser }
   expect(errors).toEqual([]);
   await context.close();
 });
+
+test('top-bar menus open and their links work', async ({ page }) => {
+  const errors = watchForErrors(page);
+  await signIn(page, MANAGER);
+
+  // Account menu: links rendered as menu items.
+  await page.getByRole('button', { name: /^Account:/ }).click();
+  await page.getByRole('menuitem', { name: 'Settings' }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Settings' })).toBeVisible();
+  await page.getByRole('button', { name: /^Account:/ }).click();
+  await page.getByRole('menuitem', { name: 'About' }).click();
+  await expect(page).toHaveURL(/\/about$/);
+
+  // Model chip menu, its settings link, theme menu and the notification bell.
+  await page.getByRole('button', { name: /^(Model:|AI unavailable)/ }).click();
+  await page.getByRole('menuitem', { name: /AI & models settings/ }).click();
+  await expect(page).toHaveURL(/\/settings\/ai$/);
+  await page.getByRole('button', { name: 'Theme' }).click();
+  await page.getByRole('menuitemradio', { name: 'Dark' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: /^Notifications/ }).click();
+  await expect(page.getByText('Choose what you’re notified about')).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await expect(page.getByText('Something went wrong')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

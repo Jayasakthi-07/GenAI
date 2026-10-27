@@ -83,7 +83,9 @@ export const errorsPlugin = fp(
         opts.spaFallback &&
         request.method === 'GET' &&
         !request.url.startsWith('/api/') &&
-        !request.url.startsWith('/uploads/')
+        !request.url.startsWith('/uploads/') &&
+        // A missing file (an old build's script) gets a real 404, not the page as "JavaScript".
+        !/\.[a-z0-9]+$/i.test(request.url.split('?')[0] ?? '')
       ) {
         return reply.type('text/html').sendFile('index.html');
       }

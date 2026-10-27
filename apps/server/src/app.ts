@@ -197,8 +197,19 @@ export async function buildApp({
     if (!existsSync(resolve(webDist, 'index.html'))) {
       throw new Error(`The web app isn't built (${webDist} is missing). Run \`pnpm build\` first.`);
     }
-    // Unknown non-API GETs fall back to index.html (see the errors plugin).
-    await app.register(fastifyStatic, { root: webDist, wildcard: false, index: 'index.html' });
+    // Files are looked up per request, so a rebuild is served without a restart. Unknown page
+    // URLs fall back to index.html (see the errors plugin); hashed assets are cached for good.
+    await app.register(fastifyStatic, {
+      root: webDist,
+      wildcard: true,
+      index: 'index.html',
+      setHeaders: (reply, path) => {
+        reply.header(
+          'Cache-Control',
+          /[\\/]assets[\\/]/.test(path) ? 'public, max-age=31536000, immutable' : 'no-cache',
+        );
+      },
+    });
   }
 
   services.notifications.start((err) => app.log.error({ err }, 'Couldn’t deliver a notification'));

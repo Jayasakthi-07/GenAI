@@ -62,6 +62,7 @@ export function DropdownMenuItem({
   className,
   destructive,
   shortcut,
+  asChild,
   children,
   ...props
 }: React.ComponentProps<typeof Menu.Item> & { destructive?: boolean; shortcut?: string }) {
@@ -72,10 +73,18 @@ export function DropdownMenuItem({
         destructive && 'text-danger data-[highlighted]:bg-danger-soft [&_svg]:text-danger',
         className,
       )}
+      asChild={asChild}
       {...props}
     >
-      {children}
-      {shortcut && <span className="ml-auto text-xs text-fg-tertiary">{shortcut}</span>}
+      {/* With asChild the item merges into its one child (a link), so nothing may sit beside it. */}
+      {asChild ? (
+        children
+      ) : (
+        <>
+          {children}
+          {shortcut && <span className="ml-auto text-xs text-fg-tertiary">{shortcut}</span>}
+        </>
+      )}
     </Menu.Item>
   );
 }
