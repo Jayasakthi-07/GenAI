@@ -49,7 +49,7 @@ export function NotificationBell() {
           {unread ? <BellRing strokeWidth={1.75} /> : <Bell strokeWidth={1.75} />}
           {unread > 0 && (
             <span
-              className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] leading-none font-semibold text-white tabular-nums"
+              className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-fill px-1 text-[10px] leading-none font-semibold text-white tabular-nums"
               aria-hidden
             >
               {unread > 99 ? '99+' : unread}

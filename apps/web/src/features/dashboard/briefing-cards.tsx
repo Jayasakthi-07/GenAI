@@ -137,7 +137,9 @@ export function AgentActivityCard() {
                           ? (labels.get(r.id) ?? 'Working…')
                           : (r.summary ?? r.error ?? '')}
                     </span>
-                    <span className="mt-0.5 block text-xs text-fg-tertiary tabular-nums">{ago(r.createdAt)}</span>
+                    <span className="mt-0.5 block text-xs text-fg-tertiary tabular-nums">
+                      {ago(r.createdAt)}
+                    </span>
                   </span>
                 </Link>
               </li>

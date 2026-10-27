@@ -30,18 +30,22 @@
   /* Accent (fill = buttons, text = links and emphasis) */
   --accent: #0a66d8;
   --accent-hover: #0858bd;
-  --accent-text: #0a66d8;
+  /* Darker than the fill so links and pills on accent-soft keep 4.5:1. */
+  --accent-text: #0959c0;
   --accent-fg: #ffffff;
   --accent-soft: rgb(10 102 216 / 0.1);
   --focus-ring: rgb(10 102 216 / 0.45);
 
   /* Status — used sparingly */
-  --success: #17803a;
+  --success: #127133;
   --success-soft: rgb(23 128 58 / 0.1);
   --warning: #a15c00;
   --warning-soft: rgb(214 138 0 / 0.14);
-  --danger: #c9352b;
-  --danger-hover: #b02c23;
+  --danger: #b62d24;
+  --danger-hover: #9f261e;
+  /* Solid red surfaces with white text (buttons, counters). */
+  --danger-fill: #b62d24;
+  --danger-fill-hover: #9f261e;
   --danger-soft: rgb(201 53 43 / 0.1);
   --neutral-soft: rgb(60 60 67 / 0.08);
 
@@ -92,8 +96,10 @@
   --success-soft: rgb(76 194 122 / 0.14);
   --warning: #f0a640;
   --warning-soft: rgb(240 166 64 / 0.15);
-  --danger: #ff6b5e;
-  --danger-hover: #ff8277;
+  --danger: #ff7b70;
+  --danger-hover: #ff8f85;
+  --danger-fill: #c9352b;
+  --danger-fill-hover: #d63a2f;
   --danger-soft: rgb(255 107 94 / 0.14);
   --neutral-soft: rgb(235 235 245 / 0.08);
 
@@ -137,6 +143,8 @@
   --color-danger: var(--danger);
   --color-danger-hover: var(--danger-hover);
   --color-danger-soft: var(--danger-soft);
+  --color-danger-fill: var(--danger-fill);
+  --color-danger-fill-hover: var(--danger-fill-hover);
   --color-neutral-soft: var(--neutral-soft);
 
   --shadow-float: var(--shadow-float);

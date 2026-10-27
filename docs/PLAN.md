@@ -110,7 +110,7 @@ The event bus is typed (`stock.changed`, `sale.recorded`, `po.status_changed`, `
 │  │     │  └─ feedback/            EmptyState, ErrorState, Skeletons, ConfirmDialog, UnsavedChangesGuard
 │  │     ├─ features/<domain>/      api hooks (queries/mutations), forms, domain components
 │  │     ├─ lib/                    api client, sse, query keys, format (en-IN money/qty/date), permissions
-│  │     └─ styles/                 tokens.css (light/dark), globals.css, fonts.ts (@fontsource)
+│  │     └─ styles/                 globals.css (tokens, light/dark), fonts via @fontsource
 │  └─ server/
 │     ├─ prisma/  schema.prisma · migrations/ · seed/ (generators, PRNG, scenarios)
 │     ├─ prisma.config.ts · tsdown.config.ts · tsconfig.json
@@ -1332,11 +1332,34 @@ Conventions:
 
 ### Phase 7 — Polish and acceptance
 
-- [ ] Every page reviewed at 1440 / 1024 / 390 in both themes; loading, empty and error states; accessibility pass (keyboard, focus, labels, contrast)
-- [ ] Performance: indexes verified with `EXPLAIN`, no N+1 queries, code-split bundle check
-- [ ] Playwright smoke test (Edge channel) of the main flow
-- [ ] README, `docs/ARCHITECTURE.md` (Mermaid), `docs/AGENTS.md`, `docs/DEMO_SCRIPT.md`
-- [ ] Acceptance checklist (brief §12) run and recorded here
+- [x] Every page reviewed at 1440 / 1024 / 390 in both themes; loading, empty and error states; accessibility pass (keyboard, focus, labels, contrast)
+- [x] Performance: indexes verified with `EXPLAIN`, no N+1 queries, code-split bundle check
+- [x] Playwright smoke test (Edge channel) of the main flow
+- [x] README, `docs/ARCHITECTURE.md` (Mermaid), `docs/AGENTS.md`, `docs/DEMO_SCRIPT.md`
+- [x] Acceptance checklist (brief §12) run and recorded here
+
+**Phase 7 decisions and results:**
+
+- `pnpm test:e2e` (config in `e2e/`, Microsoft Edge, against the running app and demo data): signs in and opens every main page; fails on any console error, uncaught exception or request leaving the machine; receives an approved purchase order through the UI and checks the stock; walks the forced temporary-password change; runs axe (WCAG 2.1 A/AA, serious and critical) on 14 pages in light and dark; checks the skip link and visible focus.
+- Accessibility fixes from axe: light-theme danger, success and accent text darkened to clear 4.5:1 on their tints (`#b62d24`, `#127133`, `#0959c0`); the dark theme's red text lightened (`#ff7b70`); a separate `--danger-fill` for solid red surfaces with white text (dark danger buttons were 2.8:1); no reduced-opacity text inside pills; decorative sparklines no longer take keyboard focus; the page-loading skeleton is a labelled `status`.
+- Performance on the full demo dataset (340k ledger rows): list endpoints 3–35 ms, dashboard 117 ms, analytics 5–85 ms. Yearly movements were 650–840 ms (three scans of 226k rows); the per-day and per-type figures now come from one scan, about 180 ms warm. The plan uses `stock_movements_occurred_at_idx`. No N+1 reads; the remaining per-line lookups sit inside write transactions. Pages are code-split (216 chunks); the largest is the charts library (115 KB gzipped).
+- Local providers are health-checked every 30 s, so the status turns rule-based when Ollama stops and recovers when it starts (integration test with a dead port).
+- Model-written run summaries and findings must cite the analysis (a named item or one of its figures); otherwise the computed summary stands. Added after a small model produced a fluent but empty summary.
+- After a seed or demo reset, the Demand Forecaster, Inventory Optimizer and Report Writer run once at startup when their outputs are missing, so forecasts, ABC–XYZ classes and the briefing exist immediately.
+
+**Acceptance checklist (brief §12), run on 2026-10-27:**
+
+| Item                                                     | Result                                                                                                                                                                                                                      |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fresh clone → README → running on Windows in < 10 min    | ✔ Scripted rehearsal in a new clone: install, bootstrap, preflight, `db:setup`, build and `pnpm start` serving the app with a working demo sign-in in 90 s (warm pnpm store; a first install also downloads packages). |
+| Ollama models appear with capability badges; switching   | ✔ Installed models listed live with tools, vision, thinking and context badges; routing selects the agents' model. Stopping Ollama turns the status rule-based within 30 s and it recovers on its own (tested).           |
+| Each cloud provider works once its key is entered        | ◐ Adapters (OpenAI-compatible presets, Gemini) are unit-tested against stubbed HTTP (tool calls, streaming, 429 with Retry-After, free-model detection); no live cloud keys were available here, so a live check is left to the first real key.        |
+| Internet off, Ollama on: everything works                | ✔ Nothing loads from the internet (e2e fails on any non-local request); every agent was run end to end with qwen3:8b on Ollama.                                                                                              |
+| No model: app works, rule-based alerts, setup guidance   | ✔ Integration tests run every agent with no model (labelled rule-based); the model chip, Assistant and first-run checklist point to AI setup.                                                                               |
+| Festive rush → alerts → POs → approve → receive → update | ✔ Run live: festive rush → Sentinel event run → Planner hand-off with 12 PO proposals → one approved → simulator sent and received it in about 30 s → stock up, Supplier Analyst and Anomaly Auditor triggered.          |
+| Every control works; no console errors; checks pass      | ✔ Typecheck, lint, 199 unit and integration tests, 6 e2e tests; the screenshot pass reports no console errors or horizontal overflow on any page at any width or theme.                                                   |
+| Premium in light and dark at 1440, 1024 and 390 px       | ✔ Every page captured with `pnpm qa:screens` and reviewed.                                                                                                                                                                  |
+| Documentation complete                                   | ✔ README, `ARCHITECTURE.md`, `AGENTS.md`, `DEMO_SCRIPT.md`, `PLAN.md`.                                                                                                                                                      |
 
 ### Stretch (only after acceptance)
 

@@ -34,10 +34,14 @@ flowchart LR
    and how people responded to its last ten proposals) and its tools. Each tool call is validated with Zod;
    invalid arguments go back to the model as a structured error so it can correct itself. The loop ends with a
    final JSON answer that must match the agent's schema (one repair attempt), or when a limit is reached.
-4. **Fallback.** With no model, or an answer that fails validation twice, the run uses the analyzer's rule-based
+4. **Grounding.** The model's summary and each finding must name something from the analysis (a product,
+   warehouse, supplier or document) or quote one of its figures. If the summary doesn't, the computed summary is
+   kept; ungrounded findings are dropped. The run timeline notes it. Small local models occasionally write fluent
+   text about nothing in particular; this keeps the line people read first factual.
+5. **Fallback.** With no model, or an answer that fails validation twice, the run uses the analyzer's rule-based
    summary, findings and proposals, labelled **Rule-based — AI unavailable**. If the model finished but proposed
    nothing, the computed proposals are still created (people approve them anyway).
-5. **Hand-offs** are fixed rules in code (the Stock Sentinel hands urgent items to the Replenishment Planner).
+6. **Hand-offs** are fixed rules in code (the Stock Sentinel hands urgent items to the Replenishment Planner).
    Models never decide which agent runs next.
 
 Every run is recorded: trigger, model and provider actually used, timings, tokens, and every step (analysis,
@@ -107,7 +111,8 @@ far more reliably than UUIDs. Results are compact (about 40 rows at most) so the
 ## Stock Sentinel
 
 **Job:** watch every product at every warehouse and keep clear, prioritized stock alerts.
-**Triggers:** every 15 minutes, after stock changes and PO status changes (60 s debounce), at startup.
+**Triggers:** every 15 minutes, after stock changes and PO status changes (events collected for 60 s, then one
+run), at startup.
 **Tools:** KPIs, stock positions, product details, sales history, open alerts, open POs.
 
 **Code (`analytics/stock-health.ts`):**
@@ -263,3 +268,14 @@ On each agent's **Settings** tab, managers and admins can turn it on or off, cho
 (five-field cron, or `@briefing`), the events that trigger it and the debounce, pick a model for it, set its limits,
 and edit its instructions (with _Restore default_). The analyzers, tools and hand-off rules are code and stay fixed.
 Models and the fallback chain are set in **Settings → AI & models**.
+
+## Triggers and startup
+
+- **Events** are collected per agent for a fixed window from the first one (its debounce setting), then one run
+  starts with every product involved. The window doesn't restart on each event, so a busy day or the simulator
+  can't keep an agent waiting.
+- **Startup:** the Stock Sentinel always takes a first look. The Demand Forecaster, Inventory Optimizer and Report
+  Writer also run once if their outputs don't exist yet (after `pnpm db:seed` or a demo reset), instead of waiting
+  for their nightly or weekly schedule.
+- **Restarts:** runs interrupted by a server restart are marked as such, and their queue jobs are cleared at boot so
+  the agent's queue isn't blocked.

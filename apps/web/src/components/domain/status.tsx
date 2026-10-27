@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
 export const StockStatePill = ({ state, count }: { state: StockState; count?: number }) => (
   <StatusPill tone={STOCK_STATE_TONES[state]}>
     {STOCK_STATE_LABELS[state]}
-    {count !== undefined && count > 1 && <span className="opacity-70">×{count}</span>}
+    {count !== undefined && count > 1 && <span className="font-normal">×{count}</span>}
   </StatusPill>
 );
 export const ProductStatusPill = ({ status }: { status: ProductStatus }) => (

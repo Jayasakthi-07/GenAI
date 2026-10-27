@@ -20,15 +20,17 @@
     "db:reset": "pnpm --filter @stockroom/server db:reset",
     "db:studio": "pnpm --filter @stockroom/server db:studio",
     "check:ledger": "pnpm --filter @stockroom/server check:ledger",
-    "typecheck": "pnpm -r --parallel typecheck",
+    "typecheck": "pnpm -r --parallel typecheck && tsc -p e2e/tsconfig.json",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "qa:screens": "node scripts/screenshots.mjs"
+    "qa:screens": "node scripts/screenshots.mjs",
+    "test:e2e": "playwright test -c e2e"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "^10.0.0",
     "@playwright/test": "^1.63.0",
     "@types/node": "^24.0.0",

@@ -38,7 +38,7 @@ export function AiMarker({
     >
       <Sparkles className="size-3" strokeWidth={2} aria-hidden />
       AI
-      {model && <span className="font-medium tracking-normal opacity-80">· {model}</span>}
+      {model && <span className="font-medium tracking-normal">· {model}</span>}
     </span>
   );
   return model ? label : <Tooltip content="Written by an AI agent">{label}</Tooltip>;

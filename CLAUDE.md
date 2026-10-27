@@ -6,8 +6,8 @@ catches anomalies, scores suppliers and writes reports, while people approve con
 
 - **Source of truth:** `docs/PROJECT_BRIEF.md`. Re-read the relevant section before starting each phase.
 - **Plan and status:** `docs/PLAN.md` (architecture, schema, agents, API, phase checklist). Tick items as they land.
-- **Current phase:** Phases 2–6 (core inventory, LLM gateway, agent runtime, analytics and agents, insights, reports,
-  notifications, simulation and demo reset) complete and committed. Next: Phase 7 (polish and acceptance).
+- **Current phase:** all phases (0–7) complete and committed; the acceptance checklist is recorded in PLAN.md.
+  Stretch goals (PLAN.md) only on request. Keep every change passing typecheck, lint, tests and `pnpm test:e2e`.
 
 ## Commands (pnpm 12, Node 24 LTS; all scripts cross-platform)
 
@@ -19,7 +19,8 @@ pnpm db:setup         # migrate + seed (deterministic)
 pnpm db:reset         # drop, migrate, seed
 pnpm dev              # server (node --watch + tsx, 127.0.0.1:4000) + web (Vite, 127.0.0.1:5173, proxies /api)
 pnpm build && pnpm start   # production build; Fastify serves the SPA on one port
-pnpm typecheck | lint | format | test | test:e2e
+pnpm typecheck | lint | format | test
+pnpm test:e2e         # Playwright (Edge) smoke + axe accessibility, config in e2e/ (needs pnpm dev + demo data)
 pnpm check:ledger     # verify every balance equals the sum of its ledger
 pnpm qa:screens       # screenshots of every page at 1440/1024/390 × light/dark (needs pnpm dev running)
 pnpm --filter @stockroom/server <script>   # run a script in one package
@@ -94,7 +95,7 @@ docs/             brief, plan, architecture, agents, demo script
 
 ## Design rules (brief §8, short form)
 
-- Apple-inspired: calm, content-first, premium. Build every screen from the tokens in `apps/web/src/styles/tokens.css`.
+- Apple-inspired: calm, content-first, premium. Build every screen from the tokens in `apps/web/src/styles/globals.css`.
 - Type: `-apple-system, BlinkMacSystemFont, "Inter Variable", "Segoe UI", sans-serif`; scale 12/13/15/17/20/24/32;
   semibold headings with slight negative tracking; **tabular numerals for all figures**.
 - Neutral surfaces, one refined blue accent, green/amber/red for status only. True dark theme in layered grays.

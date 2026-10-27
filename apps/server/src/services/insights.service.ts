@@ -130,18 +130,14 @@ export class InsightsService {
     const today = await this.today();
     const since = addDays(today, -q.days);
     const range = Prisma.sql`m.occurred_at >= (${since}::date + 1)::timestamp AT TIME ZONE ${tz}`;
-    const [byDay, byType, top] = await Promise.all([
-      this.prisma.$queryRaw<Array<{ day: Date; type: string; units: number }>>`
-        SELECT (m.occurred_at AT TIME ZONE ${tz})::date AS day, m.type::text AS type, SUM(ABS(m.quantity))::int AS units
+    // One pass over the ledger gives both the daily series and the per-type totals.
+    const [byDay, top] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ day: Date; type: string; units: number; count: number; value: number }>>`
+        SELECT (m.occurred_at AT TIME ZONE ${tz})::date AS day, m.type::text AS type, SUM(ABS(m.quantity))::int AS units,
+               COUNT(*)::int AS count, SUM(ABS(m.quantity) * m.unit_cost)::float8 AS value
         FROM stock_movements m JOIN products p ON p.id = m.product_id
         WHERE ${where} AND ${range} AND m.type <> 'OPENING_BALANCE'
         GROUP BY 1, 2`,
-      this.prisma.$queryRaw<Array<{ type: string; count: number; units: number; value: number }>>`
-        SELECT m.type::text AS type, COUNT(*)::int AS count, SUM(ABS(m.quantity))::int AS units,
-               SUM(ABS(m.quantity) * m.unit_cost)::float8 AS value
-        FROM stock_movements m JOIN products p ON p.id = m.product_id
-        WHERE ${where} AND ${range} AND m.type <> 'OPENING_BALANCE'
-        GROUP BY 1 ORDER BY units DESC`,
       this.prisma.$queryRaw<
         Array<{ product_id: string; sku: string; name: string; units: number; value: number }>
       >`
@@ -150,6 +146,15 @@ export class InsightsService {
         WHERE ${where} AND ${range} AND m.type = 'SALE'
         GROUP BY 1, 2, 3 ORDER BY units DESC LIMIT 10`,
     ]);
+    const types = new Map<string, { type: string; count: number; units: number; value: number }>();
+    for (const r of byDay) {
+      const t = types.get(r.type) ?? { type: r.type, count: 0, units: 0, value: 0 };
+      t.count += r.count;
+      t.units += r.units;
+      t.value += r.value;
+      types.set(r.type, t);
+    }
+    const byType = [...types.values()].sort((x, y) => y.units - x.units);
     const days = new Map<string, MovementInsights['byDay'][number]>();
     for (let i = q.days - 1; i >= 0; i--) {
       const d = addDays(today, -i);
