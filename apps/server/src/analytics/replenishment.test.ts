@@ -39,7 +39,7 @@ const item = (over: Partial<PlanItemInput> = {}): PlanItemInput => ({
   name: 'Toor Dal 1 kg',
   unit: 'pack',
   warehouseId: 'w1',
-  warehouseCode: 'BLR',
+  warehouseCode: 'CBE',
   available: 20,
   onOrder: 0,
   reorderPoint: null,

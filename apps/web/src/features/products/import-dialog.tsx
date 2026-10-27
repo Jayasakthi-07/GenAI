@@ -21,8 +21,8 @@ import { useCommitImport, usePreviewImport } from './api';
 
 const TEMPLATE = [
   PRODUCT_CSV_COLUMNS.join(','),
-  'RIC-NEW-001,Sona Masoori Rice 10 kg,Staples & Grains > Rice,bag,520,612,640,5,,Kaveri Gold,,"staple;rice",ACTIVE,false,,4',
-  'DAI-NEW-001,Fresh Paneer 200 g,"Dairy & Chilled > Butter, Cheese & Paneer",pack,62,80,85,5,,Himgiri,,,ACTIVE,true,12,2',
+  'RIC-NEW-001,Daawat Rozana Super Basmati Rice 10 kg,Staples & Grains > Rice,bag,975,1035,1099,5,,Daawat,,"staple;rice",ACTIVE,false,,4',
+  'DAI-NEW-001,Aavin Paneer 200 g,"Dairy & Chilled > Butter, Cheese & Paneer",pack,82,88,92,5,,Aavin,,,ACTIVE,true,12,2',
 ].join('\r\n');
 
 function downloadTemplate() {

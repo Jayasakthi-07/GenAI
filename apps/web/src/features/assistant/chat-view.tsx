@@ -20,7 +20,7 @@ const SUGGESTIONS = [
   'What is out of stock right now, and is it on order?',
   'Which suppliers are the riskiest, and why?',
   'Summarize the last 30 days of sales by category.',
-  'What should I reorder at BLR this week?',
+  'What should I reorder at CBE this week?',
 ];
 
 /** The conversation thread and composer, shared by the full page and the side panel. */

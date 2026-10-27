@@ -13,7 +13,7 @@ const line = (over: Partial<StockLine>): StockLine => ({
   sku: 'S',
   name: 'Lotion',
   warehouseId: 'w1',
-  warehouseCode: 'BLR',
+  warehouseCode: 'CBE',
   onHand: 100,
   available: 100,
   unitCost: 100,
@@ -72,9 +72,9 @@ describe('rebalancing', () => {
   it('moves excess to a warehouse about to run out, keeping the source at target', () => {
     const [move] = rebalancing([
       line({ warehouseId: 'w1', warehouseCode: 'CHN', available: 400, onHand: 400, avgDaily: 2 }),
-      line({ warehouseId: 'w2', warehouseCode: 'HYD', available: 4, onHand: 4, avgDaily: 3 }),
+      line({ warehouseId: 'w2', warehouseCode: 'MDU', available: 4, onHand: 4, avgDaily: 3 }),
     ]);
-    expect(move).toMatchObject({ fromCode: 'CHN', toCode: 'HYD', quantity: 86 });
+    expect(move).toMatchObject({ fromCode: 'CHN', toCode: 'MDU', quantity: 86 });
     expect(move?.fromCoverAfter).toBeGreaterThanOrEqual(30);
   });
   it('does nothing without both excess and shortage', () => {

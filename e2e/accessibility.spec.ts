@@ -23,7 +23,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const context = await browser.newContext({ colorScheme: scheme, reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.goto('/login');
-    await page.getByLabel('Email').fill('manager@kaveri.example');
+    await page.getByLabel('Email').fill('shaheer@kaveri.example');
     await page.getByLabel('Password', { exact: true }).fill('stockroom2026');
     await page.getByRole('button', { name: 'Sign in' }).click();
     await page.waitForURL((url) => !url.pathname.startsWith('/login'));
@@ -48,7 +48,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
 test('the keyboard reaches the content first and focus is visible', async ({ page }) => {
   await page.goto('/login');
-  await page.getByLabel('Email').fill('manager@kaveri.example');
+  await page.getByLabel('Email').fill('shaheer@kaveri.example');
   await page.getByLabel('Password', { exact: true }).fill('stockroom2026');
   await page.keyboard.press('Enter');
   await page.waitForURL((url) => !url.pathname.startsWith('/login'));

@@ -4,9 +4,8 @@ import { hashPassword } from '../services/password';
 import { bulkInsert, rupees, suspendIndexes } from './bulk-insert';
 import { addDays, istDay, istInstant } from './calendar';
 import {
-  buildCustomers,
-  CATEGORIES,
   DEMO_PASSWORD,
+  type DemoUserKey,
   ORGANIZATION,
   REASON_CODES,
   SUPPLIERS,
@@ -14,6 +13,8 @@ import {
   USERS,
   WAREHOUSES,
 } from './catalog';
+import { buildCustomers } from './customers';
+import { CATEGORIES } from './product-range';
 import { buildProducts, type ProductSpec } from './products';
 import { Rng, uuidv7 } from './random';
 import { HISTORY_DAYS, simulate, type SimulationResult } from './simulate';
@@ -23,7 +24,7 @@ export interface DemoData {
   products: ProductSpec[];
   ids: {
     org: string;
-    users: { admin: string; manager: string; staff: string };
+    users: Record<DemoUserKey, string>;
     units: Map<string, string>;
     categories: Map<string, string>;
     warehouses: Map<string, string>;
@@ -52,7 +53,7 @@ export function buildDemoData(seed: number, now: Date): DemoData {
 
   const ids: DemoData['ids'] = {
     org: id(),
-    users: { admin: id(), manager: id(), staff: id() },
+    users: Object.fromEntries(USERS.map((u) => [u.key, id()])) as Record<DemoUserKey, string>,
     units: new Map(UNITS.map((u) => [u.code, id()])),
     categories: new Map(),
     warehouses: new Map(WAREHOUSES.map((w) => [w.code, id()])),
@@ -231,7 +232,6 @@ export async function seedDemoData({
       ],
     );
 
-    const userIds = { ADMIN: ids.users.admin, MANAGER: ids.users.manager, STAFF: ids.users.staff };
     await bulkInsert(
       client,
       'users',
@@ -245,7 +245,7 @@ export async function seedDemoData({
         ['created_at', 'timestamptz'],
         ['updated_at', 'timestamptz'],
       ],
-      USERS.map((u) => [userIds[u.role], u.email, u.name, passwordHash, u.role, '{}', t0, t0]),
+      USERS.map((u) => [ids.users[u.key], u.email, u.name, passwordHash, u.role, '{}', t0, t0]),
     );
     await bulkInsert(
       client,
@@ -421,6 +421,7 @@ export async function seedDemoData({
         ['type', '"CustomerType"'],
         ['city', 'text'],
         ['email', 'text'],
+        ['gstin', 'text'],
         ['created_at', 'timestamptz'],
         ['updated_at', 'timestamptz'],
       ],
@@ -430,7 +431,8 @@ export async function seedDemoData({
         c.name,
         c.type,
         c.city,
-        `orders@${c.name.toLowerCase().replace(/[^a-z0-9]+/g, '')}.example`,
+        c.email,
+        c.gstin,
         t0,
         t0,
       ]),

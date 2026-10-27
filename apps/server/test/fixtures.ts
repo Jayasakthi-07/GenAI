@@ -33,7 +33,9 @@ export async function seedInventoryFixture(prisma: Db) {
   const chn = await prisma.warehouse.create({
     data: { code: 'CHN', name: 'Chennai', city: 'Chennai', isDefault: true },
   });
-  const blr = await prisma.warehouse.create({ data: { code: 'BLR', name: 'Bengaluru', city: 'Bengaluru' } });
+  const cbe = await prisma.warehouse.create({
+    data: { code: 'CBE', name: 'Coimbatore', city: 'Coimbatore' },
+  });
 
   const reasons = Object.fromEntries(
     await Promise.all(
@@ -122,7 +124,7 @@ export async function seedInventoryFixture(prisma: Db) {
     parent,
     category,
     chn,
-    blr,
+    cbe,
     reasons,
     supplier,
     rice,

@@ -19,7 +19,7 @@ export interface ChatDeps {
 const CHAT_RULES = [
   'Rules:',
   '- Every number you state must come from a tool result in this conversation. If you have not looked it up, look it up.',
-  '- Products, warehouses and suppliers can be referred to by SKU or code (e.g. STP-RIC-005, BLR, MST).',
+  '- Products, warehouses and suppliers can be referred to by SKU or code (e.g. STP-RIC-005, CBE, EST).',
   '- Use Markdown: short paragraphs, bullet lists, and a table when listing four or more rows.',
   '- End with one short line that says what data you used, starting with "Based on".',
   '- You cannot change anything yourself. propose_ tools show the person a confirmation card; describe what you drafted and let them confirm.',

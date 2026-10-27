@@ -80,7 +80,7 @@ describe.skipIf(!url)('Notifications (integration)', () => {
     const created = await Promise.all([
       alert('Rice is out at Chennai', 'HIGH'),
       alert('Milk is out at Chennai', 'CRITICAL'),
-      alert('Rice is out at Bengaluru', 'HIGH'),
+      alert('Rice is out at Coimbatore', 'HIGH'),
     ]);
     for (const a of created)
       ctx.app.bus.emit('alert.created', { alertId: a.id, type: a.type, severity: a.severity });

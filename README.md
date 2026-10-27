@@ -74,11 +74,12 @@ pnpm dev            # API on http://127.0.0.1:4000, app on http://127.0.0.1:5173
 
 Open **http://127.0.0.1:5173** and sign in with a demo account (the sign-in screen lists them in demo mode):
 
-| Role    | Email                    | Password        | Can                                                         |
-| ------- | ------------------------ | --------------- | ----------------------------------------------------------- |
-| Admin   | `admin@kaveri.example`   | `stockroom2026` | Everything, including users, AI keys and resetting the demo |
-| Manager | `manager@kaveri.example` | `stockroom2026` | Operations, approvals, agents and the simulator             |
-| Staff   | `staff@kaveri.example`   | `stockroom2026` | Day-to-day stock work and orders                            |
+| Name         | Role    | Email                         | Password        | Can                                                         |
+| ------------ | ------- | ----------------------------- | --------------- | ----------------------------------------------------------- |
+| Jayasakthi   | Admin   | `jayasakthi@kaveri.example`   | `stockroom2026` | Everything, including users, AI keys and resetting the demo |
+| Mehavardhini | Admin   | `mehavardhini@kaveri.example` | `stockroom2026` | Everything, including users, AI keys and resetting the demo |
+| Shaheer      | Manager | `shaheer@kaveri.example`      | `stockroom2026` | Operations, approvals, agents and the simulator             |
+| Sameer       | Staff   | `sameer@kaveri.example`       | `stockroom2026` | Day-to-day stock work and orders                            |
 
 The dashboard opens with a three-step checklist: connect a model, review the agents, run the first analysis.
 
@@ -128,11 +129,15 @@ API documentation (OpenAPI) is served at **http://127.0.0.1:4000/api/docs** whil
 
 ## The demo dataset
 
-A fictional South-Indian FMCG distributor, _Kaveri Distributors_: about 230 products in 10 categories (dairy,
-bakery, snacks and packaged foods tracked by batch and expiry), 3 warehouses (Chennai, Bengaluru, Hyderabad), 12
-suppliers of varying reliability, 40 customers, and 18 months of daily sales with trend, weekly seasonality,
-festivals (Diwali, Navratri, Onam, Pongal, Eid…) and promotions. It is generated from a fixed seed (`SEED` in
-`.env`) relative to today's date, so every reset gives the same picture.
+_Kaveri Distributors_, a fictional FMCG distributor in Tamil Nadu: about 250 products from well-known supermarket
+brands (Aashirvaad, Tata Sampann, Aavin, Amul, Maggi, Britannia, Oreo, Sunfeast, Haldiram's, Aachi, Surf Excel and
+others; dairy, bakery, snacks and packaged foods tracked by batch and expiry) in 10 categories, 3 warehouses
+(Chennai, Coimbatore, Madurai), 12 Tamil Nadu suppliers of varying reliability, 200 customers across the state
+(stores, wholesalers and online grocers), and 18 months of daily sales with trend, weekly seasonality, Tamil Nadu
+festivals (Pongal, Tamil New Year, Vinayagar Chathurthi, Ayudha Pooja, Deepavali, Karthigai Deepam, Ramzan,
+Christmas…) and promotions. It is generated from a fixed seed (`SEED` in `.env`) relative to today's date, so
+every reset gives the same picture. The brands and MRPs are real-world approximations; the company, its suppliers
+and customers, GST numbers and barcodes are invented.
 
 Situations are planted for the agents to find on their first run: stockouts behind overdue purchase orders, items
 about to run out, overstock, dead stock, batches close to expiry, demand spikes, repeated shrinkage, a cycle count

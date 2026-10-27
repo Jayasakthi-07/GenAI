@@ -113,7 +113,7 @@ describe.skipIf(!url)('catalog, import/export and suppliers (integration)', () =
 
     it('sets per-warehouse reorder levels', async () => {
       const res = await manager.patch<Array<{ warehouse: { id: string }; reorderPoint: number | null }>>(
-        `/products/${productId}/stock/${fx.blr.id}`,
+        `/products/${productId}/stock/${fx.cbe.id}`,
         {
           reorderPoint: 12,
           safetyStock: 4,
@@ -121,7 +121,7 @@ describe.skipIf(!url)('catalog, import/export and suppliers (integration)', () =
         },
       );
       expect(res.status).toBe(200);
-      expect(res.body.find((s) => s.warehouse.id === fx.blr.id)?.reorderPoint).toBe(12);
+      expect(res.body.find((s) => s.warehouse.id === fx.cbe.id)?.reorderPoint).toBe(12);
     });
 
     it('searches, filters and sorts the list', async () => {
@@ -252,12 +252,12 @@ describe.skipIf(!url)('catalog, import/export and suppliers (integration)', () =
     });
 
     it('keeps exactly one default warehouse and lets only admins manage them', async () => {
-      const input = { code: 'HYD', name: 'Hyderabad', city: 'Hyderabad', isDefault: true };
+      const input = { code: 'MDU', name: 'Madurai', city: 'Madurai', isDefault: true };
       expect((await manager.post('/warehouses', input)).status).toBe(403);
       const created = await admin.post<Warehouse>('/warehouses', input);
       expect(created.status).toBe(200);
       const all = await staff.get<Warehouse[]>('/warehouses');
-      expect(all.body.filter((w) => w.isDefault).map((w) => w.code)).toEqual(['HYD']);
+      expect(all.body.filter((w) => w.isDefault).map((w) => w.code)).toEqual(['MDU']);
 
       const deactivate = await admin.patch<ApiError>(`/warehouses/${fx.chn.id}`, {
         code: 'CHN',

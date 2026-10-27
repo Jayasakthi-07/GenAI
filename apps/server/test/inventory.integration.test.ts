@@ -39,8 +39,8 @@ describe.skipIf(!url)('inventory flows (integration)', () => {
     await ctx?.prisma.$disconnect();
   });
 
-  const riceAt = (w: 'chn' | 'blr' = 'chn') => level(ctx.prisma, fx.rice.id, fx[w].id);
-  const milkAt = (w: 'chn' | 'blr' = 'chn') => level(ctx.prisma, fx.milk.id, fx[w].id);
+  const riceAt = (w: 'chn' | 'cbe' = 'chn') => level(ctx.prisma, fx.rice.id, fx[w].id);
+  const milkAt = (w: 'chn' | 'cbe' = 'chn') => level(ctx.prisma, fx.milk.id, fx[w].id);
 
   describe('stock operations', () => {
     it('receives stock, keeps a moving-average cost and creates batches', async () => {
@@ -374,37 +374,37 @@ describe.skipIf(!url)('inventory flows (integration)', () => {
     it('moves batches with their expiry and cost to the other warehouse', async () => {
       const t = await staff.post<TransferDetail>('/transfers', {
         fromWarehouseId: fx.chn.id,
-        toWarehouseId: fx.blr.id,
+        toWarehouseId: fx.cbe.id,
         lines: [{ productId: fx.milk.id, quantity: 12 }],
         ship: true,
       });
       expect(t.status).toBe(200);
       expect(t.body.status).toBe('IN_TRANSIT');
       expect((await milkAt('chn')).onHand).toBe(23);
-      expect((await milkAt('blr')).onHand).toBe(0);
+      expect((await milkAt('cbe')).onHand).toBe(0);
 
       const received = await staff.post<TransferDetail>(`/transfers/${t.body.id}/receive`);
       expect(received.body.status).toBe('RECEIVED');
-      expect((await milkAt('blr')).onHand).toBe(12);
+      expect((await milkAt('cbe')).onHand).toBe(12);
       // Batch C (expires first) goes before B.
-      const blr = await ctx.prisma.batch.findMany({
-        where: { productId: fx.milk.id, warehouseId: fx.blr.id },
+      const cbe = await ctx.prisma.batch.findMany({
+        where: { productId: fx.milk.id, warehouseId: fx.cbe.id },
         orderBy: { batchNo: 'asc' },
       });
-      expect(blr.map((b) => [b.batchNo, b.quantity])).toEqual([
+      expect(cbe.map((b) => [b.batchNo, b.quantity])).toEqual([
         ['B', 2],
         ['C', 10],
       ]);
       const source = await ctx.prisma.batch.findFirstOrThrow({
         where: { productId: fx.milk.id, warehouseId: fx.chn.id, batchNo: 'C' },
       });
-      expect(blr[1]!.expiryDate?.toISOString()).toBe(source.expiryDate?.toISOString());
+      expect(cbe[1]!.expiryDate?.toISOString()).toBe(source.expiryDate?.toISOString());
     });
 
     it('returns stock to the source when an in-transit transfer is cancelled', async () => {
       const t = await staff.post<TransferDetail>('/transfers', {
         fromWarehouseId: fx.chn.id,
-        toWarehouseId: fx.blr.id,
+        toWarehouseId: fx.cbe.id,
         lines: [{ productId: fx.rice.id, quantity: 5 }],
         ship: true,
       });
@@ -414,7 +414,7 @@ describe.skipIf(!url)('inventory flows (integration)', () => {
       });
       expect(cancelled.body.status).toBe('CANCELLED');
       expect((await riceAt()).onHand).toBe(193);
-      expect((await riceAt('blr')).onHand).toBe(0);
+      expect((await riceAt('cbe')).onHand).toBe(0);
     });
   });
 

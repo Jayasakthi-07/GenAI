@@ -11,7 +11,7 @@ const facts = {
       daysOfCover: 0.42,
       severity: 'CRITICAL',
     },
-    { product: 'Toned Milk 1 L', sku: 'DRY-MLK-001', warehouse: 'BLR', daysOfCover: 3.14159, state: 'LOW' },
+    { product: 'Toned Milk 1 L', sku: 'DRY-MLK-001', warehouse: 'CBE', daysOfCover: 3.14159, state: 'LOW' },
   ],
   revenue: 1247956.53,
 };

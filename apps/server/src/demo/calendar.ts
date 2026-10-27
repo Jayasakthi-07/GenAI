@@ -62,47 +62,32 @@ export interface Festival {
   lift: Partial<Record<FestiveGroup, number>>;
 }
 
-/** Major festivals affecting South-Indian retail demand across the demo window (approximate dates). */
+/** Festivals that move retail demand in Tamil Nadu across the demo window (approximate dates). */
+const RAMZAN = { vermicelli: 2.2, dry_fruits: 1.0, gifting: 1.5, sweets_snacks: 0.3, general: 0.1 };
+const TAMIL_NEW_YEAR = { puja: 0.6, sweets_snacks: 0.4, rice_jaggery: 0.3, general: 0.08 };
+const AADI_PERUKKU = { puja: 0.5, rice_jaggery: 0.4, general: 0.05 };
+const VINAYAGAR = { puja: 1.2, rice_jaggery: 0.6, ghee: 0.5, coconut: 0.6, sweets_snacks: 0.3, general: 0.1 };
+const AYUDHA_POOJA = { puja: 1.4, ghee: 0.5, sweets_snacks: 0.4, general: 0.12 };
+const DEEPAVALI = {
+  gifting: 18,
+  dry_fruits: 3.5,
+  sweets_snacks: 1.3,
+  ghee: 1.1,
+  oils: 0.6,
+  puja: 3.0,
+  cleaning: 0.7,
+  general: 0.25,
+};
+const KARTHIGAI_DEEPAM = { puja: 1.5, ghee: 0.5, oils: 0.3, general: 0.05 };
+
 export const FESTIVALS: Festival[] = [
-  {
-    name: 'Eid al-Fitr',
-    day: '2025-03-31',
-    leadDays: 6,
-    lift: { vermicelli: 2.2, dry_fruits: 1.0, gifting: 1.5, sweets_snacks: 0.3, general: 0.1 },
-  },
-  {
-    name: 'Ganesh Chaturthi',
-    day: '2025-08-27',
-    leadDays: 6,
-    lift: { puja: 1.2, rice_jaggery: 0.6, ghee: 0.5, coconut: 0.6, sweets_snacks: 0.3, general: 0.1 },
-  },
-  {
-    name: 'Onam',
-    day: '2025-09-05',
-    leadDays: 7,
-    lift: { coconut: 1.0, sweets_snacks: 0.6, rice_jaggery: 0.4, general: 0.15 },
-  },
-  {
-    name: 'Navratri',
-    day: '2025-09-30',
-    leadDays: 10,
-    lift: { puja: 1.4, ghee: 0.5, sweets_snacks: 0.3, general: 0.12 },
-  },
-  {
-    name: 'Diwali',
-    day: '2025-10-20',
-    leadDays: 18,
-    lift: {
-      gifting: 18,
-      dry_fruits: 3.5,
-      sweets_snacks: 1.3,
-      ghee: 1.1,
-      oils: 0.6,
-      puja: 3.0,
-      cleaning: 0.7,
-      general: 0.25,
-    },
-  },
+  { name: 'Ramzan', day: '2025-03-31', leadDays: 6, lift: RAMZAN },
+  { name: 'Tamil New Year', day: '2025-04-14', leadDays: 5, lift: TAMIL_NEW_YEAR },
+  { name: 'Aadi Perukku', day: '2025-08-03', leadDays: 4, lift: AADI_PERUKKU },
+  { name: 'Vinayagar Chathurthi', day: '2025-08-27', leadDays: 6, lift: VINAYAGAR },
+  { name: 'Ayudha Pooja', day: '2025-10-01', leadDays: 10, lift: AYUDHA_POOJA },
+  { name: 'Deepavali', day: '2025-10-20', leadDays: 18, lift: DEEPAVALI },
+  { name: 'Karthigai Deepam', day: '2025-12-04', leadDays: 5, lift: KARTHIGAI_DEEPAM },
   {
     name: 'Christmas',
     day: '2025-12-25',
@@ -112,49 +97,16 @@ export const FESTIVALS: Festival[] = [
   {
     name: 'Pongal',
     day: '2026-01-14',
-    leadDays: 6,
-    lift: { rice_jaggery: 0.9, ghee: 0.6, coconut: 0.3, general: 0.1 },
-  },
-  { name: 'Holi', day: '2026-03-04', leadDays: 5, lift: { sweets_snacks: 0.5, ghee: 0.2, general: 0.08 } },
-  {
-    name: 'Eid al-Fitr',
-    day: '2026-03-20',
-    leadDays: 6,
-    lift: { vermicelli: 2.2, dry_fruits: 1.0, gifting: 1.5, sweets_snacks: 0.3, general: 0.1 },
-  },
-  {
-    name: 'Onam',
-    day: '2026-08-26',
     leadDays: 7,
-    lift: { coconut: 1.0, sweets_snacks: 0.6, rice_jaggery: 0.4, general: 0.15 },
+    lift: { rice_jaggery: 1.2, ghee: 0.7, puja: 0.4, sweets_snacks: 0.3, coconut: 0.3, general: 0.12 },
   },
-  {
-    name: 'Ganesh Chaturthi',
-    day: '2026-09-14',
-    leadDays: 6,
-    lift: { puja: 1.2, rice_jaggery: 0.6, ghee: 0.5, coconut: 0.6, sweets_snacks: 0.3, general: 0.1 },
-  },
-  {
-    name: 'Navratri',
-    day: '2026-10-19',
-    leadDays: 10,
-    lift: { puja: 1.4, ghee: 0.5, sweets_snacks: 0.3, general: 0.12 },
-  },
-  {
-    name: 'Diwali',
-    day: '2026-11-08',
-    leadDays: 18,
-    lift: {
-      gifting: 18,
-      dry_fruits: 3.5,
-      sweets_snacks: 1.3,
-      ghee: 1.1,
-      oils: 0.6,
-      puja: 3.0,
-      cleaning: 0.7,
-      general: 0.25,
-    },
-  },
+  { name: 'Ramzan', day: '2026-03-20', leadDays: 6, lift: RAMZAN },
+  { name: 'Tamil New Year', day: '2026-04-14', leadDays: 5, lift: TAMIL_NEW_YEAR },
+  { name: 'Aadi Perukku', day: '2026-08-03', leadDays: 4, lift: AADI_PERUKKU },
+  { name: 'Vinayagar Chathurthi', day: '2026-09-14', leadDays: 6, lift: VINAYAGAR },
+  { name: 'Ayudha Pooja', day: '2026-10-19', leadDays: 10, lift: AYUDHA_POOJA },
+  { name: 'Deepavali', day: '2026-11-08', leadDays: 18, lift: DEEPAVALI },
+  { name: 'Karthigai Deepam', day: '2026-11-23', leadDays: 5, lift: KARTHIGAI_DEEPAM },
 ];
 
 /** Festive demand multiplier for a day and a product's festive groups. */

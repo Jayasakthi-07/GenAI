@@ -1,15 +1,6 @@
 import { addDays, daysBetween, type FestiveGroup } from './calendar';
-import {
-  CATEGORIES,
-  type CategoryDef,
-  EXTRA_ITEMS,
-  type ItemDef,
-  PRIVATE_LABEL,
-  SUPPLIERS,
-  type SupplierDef,
-  UNITS,
-  WEEKLY,
-} from './catalog';
+import { type CategoryDef, type ItemDef, SUPPLIERS, type SupplierDef, UNITS, WEEKLY } from './catalog';
+import { CATEGORIES } from './product-range';
 import { ean13, hashString, type Rng } from './random';
 
 export interface Promo {
@@ -57,7 +48,7 @@ export interface ProductSpec {
   weekly: number[];
   pack: number;
   moq: number;
-  noHyd: boolean;
+  noMdu: boolean;
   wholesaleOnly: boolean;
   tags: string[];
   promos: Promo[];
@@ -66,6 +57,8 @@ export interface ProductSpec {
 
 export const slugify = (text: string) =>
   text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[×]/g, 'x')
     .replace(/[^a-z0-9]+/g, '-')
@@ -77,27 +70,27 @@ const unitNames = new Map(UNITS.map((u) => [u.code, u.name]));
 /** Nominal lead time a supplier quotes for a product. */
 function nominalLeadTime(code: string, shelf: number | null): number {
   switch (code) {
-    case 'NGM':
+    case 'VGT':
       return 4;
-    case 'DAF':
+    case 'TFA':
       return 6;
     case 'COF':
       return 5;
-    case 'MST':
+    case 'EST':
       return 8;
-    case 'SSP':
+    case 'CSD':
       return 5;
-    case 'GBV':
+    case 'MBA':
       return 4;
-    case 'HDC':
+    case 'KDA':
       return 1;
-    case 'KBK':
+    case 'SBD':
       return shelf !== null && shelf <= 14 ? 1 : 3;
-    case 'VPC':
+    case 'PPC':
       return 7;
     case 'KHC':
       return 6;
-    case 'TPF':
+    case 'RFA':
       return 7;
     case 'SWM':
       return shelf !== null && shelf <= 14 ? 1 : 2;
@@ -130,13 +123,7 @@ export function buildProducts(rng: Rng, start: string, today: string): ProductSp
   const seenBarcodes = new Set<string>();
   const counters = new Map<string, number>();
 
-  const add = (
-    category: CategoryDef,
-    subCode: string,
-    subName: string,
-    item: ItemDef,
-    privateLabel: boolean,
-  ) => {
+  const add = (category: CategoryDef, subCode: string, subName: string, item: ItemDef) => {
     for (const variant of item.variants) {
       const r = rng.fork(`${item.brand}|${item.name}|${variant.size}`);
       const counterKey = `${category.code}-${subCode}`;
@@ -144,15 +131,15 @@ export function buildProducts(rng: Rng, start: string, today: string): ProductSp
       counters.set(counterKey, n);
 
       const shelf = item.shelf ?? category.shelf ?? null;
-      const primaryCode = privateLabel ? 'SWM' : category.supplier;
-      const alternates = privateLabel
-        ? [category.supplier]
-        : category.alternates.filter((code) => code !== primaryCode && (code === 'SWM' ? r.bool(0.7) : true));
+      const primaryCode = category.supplier;
+      const alternates = category.alternates.filter(
+        (code) => code !== primaryCode && (code === 'SWM' ? r.bool(0.7) : true),
+      );
 
-      const costPaise = Math.round(variant.cost * 100);
-      const margin = r.float(category.margin[0], category.margin[1]);
-      const sellingPaise = roundPrice(costPaise * (1 + margin));
-      const mrpPaise = Math.ceil((sellingPaise * r.float(1.05, 1.14)) / 100) * 100;
+      // MRP is printed on the pack; stores buy below it and the distributor's cost is below that.
+      const mrpPaise = Math.round(variant.mrp * 100);
+      const sellingPaise = roundPrice(mrpPaise * (1 - r.float(category.discount[0], category.discount[1])));
+      const costPaise = Math.round(sellingPaise / (1 + r.float(category.margin[0], category.margin[1])));
 
       const key = slugify(`${item.brand} ${item.name} ${variant.size}`);
       let barcodeSeed = hashString(key);
@@ -169,7 +156,6 @@ export function buildProducts(rng: Rng, start: string, today: string): ProductSp
       const groups = [...new Set([...(category.groups ?? []), ...(item.groups ?? [])])];
       const tags = [
         ...(shelf !== null ? ['perishable'] : []),
-        ...(privateLabel ? ['private-label'] : []),
         ...(variant.v >= 30 ? ['fast-mover'] : []),
         ...(wholesaleOnly ? ['wholesale-pack'] : []),
         ...(groups.some((g) => g === 'gifting' || g === 'dry_fruits' || g === 'puja') ? ['festive'] : []),
@@ -195,7 +181,7 @@ export function buildProducts(rng: Rng, start: string, today: string): ProductSp
       });
 
       const unitName = unitNames.get(variant.unit) ?? variant.unit;
-      const brand = privateLabel ? 'Kaveri Select' : item.brand;
+      const brand = item.brand;
       products.push({
         key,
         sku: `${category.code}-${subCode}-${String(n).padStart(3, '0')}`,
@@ -204,7 +190,6 @@ export function buildProducts(rng: Rng, start: string, today: string): ProductSp
         description:
           item.desc ??
           `${item.name} from ${brand}, ${variant.size} ${unitName.toLowerCase()}.` +
-            (privateLabel ? ' Kaveri house brand.' : '') +
             (shelf !== null ? ` Shelf life ${shelf} days.` : ''),
         category,
         subcategorySlug: `${category.slug}-${slugify(subName)}`,
@@ -225,7 +210,7 @@ export function buildProducts(rng: Rng, start: string, today: string): ProductSp
         weekly: WEEKLY[category.weekly],
         pack,
         moq,
-        noHyd: variant.noHyd ?? false,
+        noMdu: variant.noMdu ?? false,
         wholesaleOnly,
         tags,
         promos: makePromos(r, start, today),
@@ -234,34 +219,10 @@ export function buildProducts(rng: Rng, start: string, today: string): ProductSp
     }
   };
 
-  const extrasBySub = new Map<string, ItemDef[]>();
-  for (const extra of EXTRA_ITEMS) {
-    const k = `${extra.category}|${extra.sub}`;
-    extrasBySub.set(k, [...(extrasBySub.get(k) ?? []), extra.item]);
-  }
-
   for (const category of CATEGORIES) {
     for (const sub of category.subcategories) {
-      for (const item of [...sub.items, ...(extrasBySub.get(`${category.slug}|${sub.code}`) ?? [])]) {
-        add(category, sub.code, sub.name, item, false);
-      }
+      for (const item of sub.items) add(category, sub.code, sub.name, item);
     }
-  }
-  for (const pl of PRIVATE_LABEL) {
-    const category = CATEGORIES.find((c) => c.slug === pl.category);
-    const sub = category?.subcategories.find((s) => s.code === pl.sub);
-    if (!category || !sub) throw new Error(`Unknown private-label category ${pl.category}/${pl.sub}`);
-    add(
-      category,
-      sub.code,
-      sub.name,
-      {
-        name: pl.name,
-        brand: 'Kaveri Select',
-        variants: [{ size: pl.size, unit: pl.unit, cost: pl.cost, v: pl.v, pack: pl.pack }],
-      },
-      true,
-    );
   }
   return products;
 }

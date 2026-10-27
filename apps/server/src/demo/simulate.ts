@@ -1,5 +1,6 @@
 import { addDays, dayOfWeek, daysBetween, festiveMultiplier, istDay, istInstant, monthOf } from './calendar';
-import { type CustomerDef, SUPPLIERS, type SupplierDef, WAREHOUSES, type WarehouseDef } from './catalog';
+import { SUPPLIERS, type SupplierDef, WAREHOUSES, type WarehouseDef } from './catalog';
+import type { CustomerDef } from './customers';
 import * as plants from './plants';
 import type { ProductSpec, SupplierLink } from './products';
 import { type Rng, uuidv7 } from './random';
@@ -402,7 +403,7 @@ export function simulate(input: SimulationInput): SimulationResult {
 
   for (const p of products) {
     const r = rng.fork(`loc|${p.key}`);
-    const whs = WAREHOUSES.filter((w) => !(p.noHyd && w.code === 'HYD'));
+    const whs = WAREHOUSES.filter((w) => !(p.noMdu && w.code === 'MDU'));
     const raw = whs.map((w) => w.share * r.float(0.7, 1.3));
     const total = raw.reduce((a, b) => a + b, 0);
     whs.forEach((wh, i) => {
@@ -954,8 +955,8 @@ export function simulate(input: SimulationInput): SimulationResult {
     for (const wh of WAREHOUSES) {
       const pool = customersByWh.get(wh.code) ?? [];
       const wholesale = dr.shuffle(pool.filter((c) => c.type === 'WHOLESALE')).slice(0, 2);
-      const retail = dr.shuffle(pool.filter((c) => c.type === 'RETAIL')).slice(0, 3);
-      const online = dr.shuffle(pool.filter((c) => c.type === 'ONLINE')).slice(0, 1);
+      const retail = dr.shuffle(pool.filter((c) => c.type === 'RETAIL')).slice(0, 5);
+      const online = dr.shuffle(pool.filter((c) => c.type === 'ONLINE')).slice(0, 2);
       const dayCustomers = [...wholesale, ...retail, ...online];
       const orders = dayCustomers.map((c, i) =>
         newSalesOrder(c, warehouseIds.get(wh.code) ?? '', istInstant(day, 10 * 60 + i * 9), 'FULFILLED'),
@@ -1231,7 +1232,7 @@ export function simulate(input: SimulationInput): SimulationResult {
       }
       const gapKey = `${link.supplier.code}|${l.wh.code}`;
       const gap =
-        link.supplier.code === 'HDC' || link.supplier.code === 'KBK'
+        link.supplier.code === 'KDA' || link.supplier.code === 'SBD'
           ? 1
           : link.supplier.code === 'SWM'
             ? 2
@@ -1451,25 +1452,25 @@ export function simulate(input: SimulationInput): SimulationResult {
       });
       for (const it of items) it.loc.onOrder -= it.qty;
     }
-    const ngm = SUPPLIERS.find((s) => s.code === 'NGM');
-    const blr = WAREHOUSES.find((w) => w.code === 'BLR');
-    if (ngm && blr) {
-      const items = (locsByWh.get('BLR') ?? [])
-        .filter((l) => l.p.suppliers[0]?.supplier.code === 'NGM' && l.p.v >= 15)
+    const vgt = SUPPLIERS.find((s) => s.code === 'VGT');
+    const cbe = WAREHOUSES.find((w) => w.code === 'CBE');
+    if (vgt && cbe) {
+      const items = (locsByWh.get('CBE') ?? [])
+        .filter((l) => l.p.suppliers[0]?.supplier.code === 'VGT' && l.p.v >= 15)
         .slice(0, 4)
         .map((l) => ({
           loc: l,
           qty: roundUp(l.p.v * l.share * 21, l.p.pack),
           costPaise: supplierCostPaise(l.p.suppliers[0] as SupplierLink, l.p, lastDay),
         }));
-      const po = createPo(ngm, blr, lastDay, 16 * 60, items, 4);
+      const po = createPo(vgt, cbe, lastDay, 16 * 60, items, 4);
       Object.assign(po, {
         status: 'PENDING_APPROVAL',
         createdById: users.staff,
         approvedById: null,
         approvedAt: null,
         sentAt: null,
-        notes: 'Festive season stock-up (Navratri) — needs manager approval',
+        notes: 'Festive season stock-up — needs manager approval',
       });
       for (const it of items) it.loc.onOrder -= it.qty;
     }
@@ -1532,7 +1533,7 @@ export function simulate(input: SimulationInput): SimulationResult {
       fromWarehouseId: whId(t.from),
       toWarehouseId: whId(t.to),
       status: 'IN_TRANSIT',
-      reason: 'Hyderabad running low on staples ahead of the weekend',
+      reason: 'Madurai running low on staples ahead of the weekend',
       createdById: users.manager,
       shippedAt: at,
       receivedAt: null,
@@ -1553,13 +1554,13 @@ export function simulate(input: SimulationInput): SimulationResult {
     transfers.push(transfer);
   }
 
-  // A cycle count in progress at Bengaluru.
+  // A cycle count in progress at Coimbatore.
   {
     const at = eve(9 * 60 + 30);
     const cc: CycleCountRow = {
       id: newId(at),
       number: nextNumber('CC', at),
-      warehouseId: whId('BLR'),
+      warehouseId: whId('CBE'),
       status: 'OPEN',
       reason: 'Quarterly count — personal care aisle',
       createdById: users.manager,
@@ -1569,7 +1570,7 @@ export function simulate(input: SimulationInput): SimulationResult {
       completedAt: null,
       lines: [],
     };
-    const pool = (locsByWh.get('BLR') ?? [])
+    const pool = (locsByWh.get('CBE') ?? [])
       .filter((l) => l.p.category.slug === 'personal-care')
       .slice(0, 10);
     for (const l of pool) {

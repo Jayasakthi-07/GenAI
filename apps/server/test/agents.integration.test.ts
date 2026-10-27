@@ -79,13 +79,13 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
     staff = await signIn(ctx.app, fx.users.staff.email);
 
     // Rice at Chennai: 12 left, selling 5 a day for 8 weeks; reorder point 40.
-    // Milk at Bengaluru: 3 left, selling 2 a day; reorder point 10.
+    // Milk at Coimbatore: 3 left, selling 2 a day; reorder point 10.
     await manager.post('/stock/receive', {
       warehouseId: fx.chn.id,
       lines: [{ productId: fx.rice.id, quantity: 12, unitCost: '400' }],
     });
     await manager.post('/stock/receive', {
-      warehouseId: fx.blr.id,
+      warehouseId: fx.cbe.id,
       lines: [
         { productId: fx.milk.id, quantity: 3, unitCost: '50', batchNo: 'M1', expiryDate: dayFromNow(60) },
       ],
@@ -107,7 +107,7 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
         },
         {
           productId: fx.milk.id,
-          warehouseId: fx.blr.id,
+          warehouseId: fx.cbe.id,
           date,
           quantity: 2,
           revenue: '120',
@@ -273,7 +273,7 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
       expect(r.mode).toBe('RULE_BASED');
       expect(r.output?.fallbackReason).toBe('No AI model is available');
       const action = await ctx.prisma.agentAction.findFirstOrThrow({ where: { runId: r.id } });
-      // Milk at BLR: capped at max stock, ₹4,850, catalog price → low risk → executed automatically.
+      // Milk at CBE: capped at max stock, ₹4,850, catalog price → low risk → executed automatically.
       expect(action).toMatchObject({
         status: 'EXECUTED',
         autoExecuted: true,
@@ -299,10 +299,10 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
         type: 'CREATE_PURCHASE_ORDER',
         payload: {
           supplierId: fx.supplier.id,
-          warehouseId: fx.blr.id,
+          warehouseId: fx.cbe.id,
           lines: [{ productId: fx.milk.id, quantity: 10, unitCost: '50.00' }],
         },
-        rationale: 'Milk is low at BLR.',
+        rationale: 'Milk is low at CBE.',
         rationaleSource: 'AI',
         modelUsed: 'mock',
         dataUsed: [],
@@ -319,7 +319,7 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
     const id = proposed.outcome === 'pending' ? proposed.actionId : '';
     expect((await manager.post<ApiError>(`/actions/${id}/reject`, { reason: '' })).status).toBe(400);
     const rejected = await manager.post<ActionDto>(`/actions/${id}/reject`, {
-      reason: 'Milk is already on order at BLR',
+      reason: 'Milk is already on order at CBE',
     });
     expect(rejected.body.status).toBe('REJECTED');
 
@@ -332,23 +332,23 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
                 name: 'propose_purchase_order',
                 arguments: {
                   supplier: 'SUP',
-                  warehouse: 'BLR',
+                  warehouse: 'CBE',
                   lines: [{ product: 'MILK-1', quantity: 10 }],
-                  rationale: 'Milk is below its reorder point at BLR.',
+                  rationale: 'Milk is below its reorder point at CBE.',
                 },
               },
             ],
           }
         : { content: JSON.stringify({ summary: 'Done.', findings: [] }) },
     );
-    // Raise milk's reorder point at BLR so the planner has something to analyze.
+    // Raise milk's reorder point at CBE so the planner has something to analyze.
     await ctx.prisma.stockLevel.update({
-      where: { productId_warehouseId: { productId: fx.milk.id, warehouseId: fx.blr.id } },
+      where: { productId_warehouseId: { productId: fx.milk.id, warehouseId: fx.cbe.id } },
       data: { reorderPoint: 500 },
     });
     const r = await run('replenishment_planner');
     const briefing = r.steps.find((s) => s.type === 'CONTEXT')?.content ?? '';
-    expect(briefing).toContain('Milk is already on order at BLR');
+    expect(briefing).toContain('Milk is already on order at CBE');
     expect(r.steps.find((s) => s.toolName === 'propose_purchase_order')?.output).toMatchObject({
       outcome: 'recently_rejected',
     });
@@ -465,17 +465,17 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
                 name: 'propose_transfer',
                 arguments: {
                   from: 'CHN',
-                  to: 'BLR',
+                  to: 'CBE',
                   lines: [{ product: 'RICE-1', quantity: 5 }],
-                  rationale: 'BLR has no rice.',
+                  rationale: 'CBE has no rice.',
                 },
               },
             ],
           };
-        return { content: 'I drafted a transfer of 5 bags from CHN to BLR.\n\nBased on stock at CHN.' };
+        return { content: 'I drafted a transfer of 5 bags from CHN to CBE.\n\nBased on stock at CHN.' };
       });
       const conv = (await manager.post<ConversationDto>('/assistant/conversations', {})).body;
-      const events = await ask(manager, conv.id, 'Move some rice to Bengaluru');
+      const events = await ask(manager, conv.id, 'Move some rice to Coimbatore');
       expect(events.map((e) => e.type)).toEqual(
         expect.arrayContaining(['start', 'tool', 'part', 'text', 'done']),
       );
@@ -507,7 +507,7 @@ describe.skipIf(!url)('Agent runtime (integration)', () => {
 
       const detail = await manager.get<ConversationDetail>(`/assistant/conversations/${conv.id}`);
       expect(detail.body.messages.map((m) => m.role)).toEqual(['user', 'assistant']);
-      expect(detail.body.title).toBe('Move some rice to Bengaluru');
+      expect(detail.body.title).toBe('Move some rice to Coimbatore');
       // Conversations are private.
       const admin = await signIn(ctx.app, fx.users.admin.email);
       expect((await admin.get(`/assistant/conversations/${conv.id}`)).status).toBe(404);

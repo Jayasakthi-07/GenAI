@@ -9,7 +9,7 @@ const pos = (over: Partial<PositionInput>): PositionInput => ({
   productName: 'Toor Dal 1 kg',
   unit: 'pack',
   warehouseId: 'w1',
-  warehouseCode: 'BLR',
+  warehouseCode: 'CBE',
   onHand: 100,
   available: 100,
   onOrder: 0,

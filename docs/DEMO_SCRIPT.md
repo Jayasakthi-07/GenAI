@@ -7,10 +7,11 @@ simulator records sales and receipts through the same services people use.
 ## Before you present (10 minutes ahead)
 
 1. Start PostgreSQL and Ollama, then `pnpm dev`. Open http://127.0.0.1:5173 in a large window.
-2. Sign in as **admin@kaveri.example** (password `stockroom2026`), open **Simulation** and press **Reset demo data**
+2. Sign in as **jayasakthi@kaveri.example** (admin, password `stockroom2026`), open **Simulation** and press **Reset demo data**
    (under a minute). The Stock Sentinel, Demand Forecaster, Inventory Optimizer and Report Writer then take a
    first look; give them two or three minutes with a local model.
-3. Sign out and sign in as **manager@kaveri.example**: the manager approves things, which is the point of the demo.
+3. Sign out and sign in as **shaheer@kaveri.example** (manager): the manager approves things, which is the point of
+   the demo.
 4. On **Simulation**, set the speed to **Fastest** (one simulated day every 15 seconds) so deliveries arrive while
    you talk.
 5. Optional: open the bell and press _Mark all read_, so new notifications stand out.
@@ -22,7 +23,7 @@ same flow works with rule-based output (labelled as such).
 
 ### 0:00 · The problem and the dashboard (45 s)
 
-> "A distributor with 230 products in three warehouses can't watch every shelf. Stockroom gives them a team of
+> "A distributor with 250 products in three warehouses can't watch every shelf. Stockroom gives them a team of
 > agents that watch, and people who decide."
 
 - **Dashboard:** inventory value, revenue, fill rate and days of inventory; the attention strip (out of stock, need
@@ -68,7 +69,7 @@ Pick one:
 
 ### 5:15 · Ask the Assistant (60 s)
 
-- Press **Ask** (or `Ctrl J`) and ask: _"What's most likely to run out in Bengaluru this week?"_ It answers from
+- Press **Ask** (or `Ctrl J`) and ask: _"What's most likely to run out in Coimbatore this week?"_ It answers from
   live data with a table.
 - Then: _"Order 100 more of the first one."_ It replies with a **confirmation card**; nothing changes until you
   confirm, and then the change is made as you, with an audit entry.

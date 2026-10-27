@@ -90,7 +90,7 @@ function SupplierForm({
         <Field label="Name" required error={e.name?.message}>
           <Input {...register('name')} />
         </Field>
-        <Field label="Code" required error={e.code?.message} hint="Short and unique, e.g. NGM">
+        <Field label="Code" required error={e.code?.message} hint="Short and unique, e.g. VGT">
           <Input {...register('code')} className="font-mono uppercase" />
         </Field>
         <Field label="Contact person" error={e.contactName?.message}>

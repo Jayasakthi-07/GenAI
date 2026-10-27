@@ -1361,6 +1361,23 @@ Conventions:
 | Premium in light and dark at 1440, 1024 and 390 px       | ✔ Every page captured with `pnpm qa:screens` and reviewed.                                                                                                                                                                                      |
 | Documentation complete                                   | ✔ README, `ARCHITECTURE.md`, `AGENTS.md`, `DEMO_SCRIPT.md`, `PLAN.md`.                                                                                                                                                                          |
 
+### After acceptance — Tamil Nadu dataset (requested 2026-10-27)
+
+- [x] Team of four: Jayasakthi and Mehavardhini (admins), Shaheer (manager), Sameer (staff), all `@kaveri.example`
+      with the demo password. `USERS` carries a `key` the simulator uses for who did what.
+- [x] Everything in Tamil Nadu: warehouses Chennai (CHN), Coimbatore (CBE) and Madurai (MDU) replace Bengaluru and
+      Hyderabad; the 12 suppliers are Tamil Nadu distributors (state code 33 GSTINs, local phone codes, Tamil contact
+      names); 200 customers (150 stores, 40 wholesalers, 10 online grocers) across 50 towns, in `customers.ts`.
+- [x] Product range (`product-range.ts`): ~250 SKUs from well-known supermarket brands only, including Tamil Nadu
+      favourites (Aavin, Arokya, Milky Mist, Gold Winner, Idhayam, Aachi, Sakthi, Medimix, Hamam, Anil, iD, Arun).
+      The house brand is gone. Variants carry the printed MRP; the price to stores and the cost are derived from it
+      (category `discount` and `margin`), so MRPs are round and recognisable. Barcodes stay generated.
+- [x] Festival calendar is Tamil Nadu's (Pongal, Tamil New Year, Aadi Perukku, Vinayagar Chathurthi, Ayudha Pooja,
+      Deepavali, Karthigai Deepam, Ramzan, Christmas). Planted situations re-keyed; verified on 7 dates
+      (the "expires tomorrow" plant moved from bread to idli batter, which is always in stock). Each warehouse now
+      takes five store orders and two online orders a day (lines per day unchanged).
+- [x] Test fixtures, the Assistant's examples and the docs use the new codes and names.
+
 ### Stretch (only after acceptance)
 
 Smart document intake (vision) · barcode/QR labels and webcam scanning · pull Ollama models from the UI · email notifications · semantic search with embeddings.

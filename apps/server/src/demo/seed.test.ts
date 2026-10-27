@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import { SUPPLIERS, USERS, WAREHOUSES } from './catalog';
 import * as plants from './plants';
 import { buildDemoData, verifyDemoData } from './seed';
 
@@ -22,6 +23,23 @@ describe('demo dataset', () => {
 
   it('is deterministic for a seed and date', () => {
     expect(fingerprint(buildDemoData(20260927, NOW))).toBe(fingerprint(data));
+  });
+
+  it('is a Tamil Nadu business run by four people', () => {
+    expect(USERS.map((u) => [u.name, u.role])).toEqual([
+      ['Jayasakthi', 'ADMIN'],
+      ['Mehavardhini', 'ADMIN'],
+      ['Shaheer', 'MANAGER'],
+      ['Sameer', 'STAFF'],
+    ]);
+    expect(WAREHOUSES.map((w) => w.city)).toEqual(['Chennai', 'Coimbatore', 'Madurai']);
+    // GSTIN state code 33 is Tamil Nadu.
+    expect(SUPPLIERS.every((s) => s.gstin.startsWith('33'))).toBe(true);
+    expect(data.customers.length).toBeGreaterThanOrEqual(200);
+    expect(new Set(data.customers.map((c) => c.name)).size).toBe(data.customers.length);
+    expect(
+      data.customers.filter((c) => c.gstin).every((c) => /^33[A-Z]{5}\d{4}[A-Z]1Z\d$/.test(c.gstin ?? '')),
+    ).toBe(true);
   });
 
   it('has the promised shape: ~200 products, 3 warehouses, ~12 suppliers, ~18 months of sales', () => {

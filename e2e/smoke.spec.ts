@@ -2,8 +2,8 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 
 /** The seeded demo accounts (DEMO_MODE): see apps/server/src/demo/catalog.ts. */
 const DEMO_PASSWORD = 'stockroom2026';
-const MANAGER = 'manager@kaveri.example';
-const ADMIN = 'admin@kaveri.example';
+const MANAGER = 'shaheer@kaveri.example';
+const ADMIN = 'jayasakthi@kaveri.example';
 
 /**
  * Fails the test on any console error, uncaught exception, or request that leaves this machine

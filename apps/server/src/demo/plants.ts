@@ -11,15 +11,15 @@
  */
 export const LOW_STOCK_WINDOW_DAYS = 60;
 export const LOW_STOCK: Array<{ key: string; wh: string; coverDays: number }> = [
-  { key: 'annapurna-harvest-toor-dal-1-kg', wh: 'BLR', coverDays: 1 },
-  { key: 'himgiri-pure-cow-ghee-1-l', wh: 'CHN', coverDays: -3 },
-  { key: 'himgiri-pure-cow-ghee-1-l', wh: 'BLR', coverDays: 0.5 },
-  { key: 'tapti-masala-instant-noodles-4-pack', wh: 'CHN', coverDays: 3 },
-  { key: 'kesar-farms-basmati-rice-5-kg', wh: 'HYD', coverDays: -5 },
-  { key: 'nilgiri-estates-filter-coffee-powder-500-g', wh: 'BLR', coverDays: 0.5 },
-  { key: 'sparkle-detergent-powder-1-kg', wh: 'HYD', coverDays: 2 },
-  { key: 'crispo-potato-chips-classic-salted-52-g', wh: 'CHN', coverDays: -2 },
-  { key: 'konkan-bakery-glucose-biscuits-200-g', wh: 'BLR', coverDays: 1 },
+  { key: 'tata-sampann-unpolished-toor-dal-1-kg', wh: 'CBE', coverDays: 1 },
+  { key: 'aavin-ghee-1-l', wh: 'CHN', coverDays: -3 },
+  { key: 'aavin-ghee-1-l', wh: 'CBE', coverDays: 0.5 },
+  { key: 'maggi-2-minute-masala-noodles-4-x-70-g', wh: 'CHN', coverDays: 3 },
+  { key: 'india-gate-feast-rozzana-basmati-rice-5-kg', wh: 'MDU', coverDays: -5 },
+  { key: 'bru-green-label-filter-coffee-500-g', wh: 'CBE', coverDays: 0.5 },
+  { key: 'surf-excel-easy-wash-detergent-powder-1-kg', wh: 'MDU', coverDays: 2 },
+  { key: 'lay-s-classic-salted-48-g', wh: 'CHN', coverDays: -2 },
+  { key: 'parle-g-original-glucose-biscuits-250-g', wh: 'CBE', coverDays: 1 },
 ];
 
 /**
@@ -29,44 +29,44 @@ export const LOW_STOCK: Array<{ key: string; wh: string; coverDays: number }> = 
  */
 export const STUCK_WINDOW = { from: -25, force: -8 };
 export const STUCK_ORDERS: Array<{ key: string; wh: string }> = [
-  { key: 'malabar-coast-sunflower-oil-1-l-pouch', wh: 'CHN' },
-  { key: 'malabar-coast-groundnut-oil-1-l', wh: 'CHN' },
-  { key: 'chai-bagan-assam-ctc-tea-250-g', wh: 'HYD' },
-  { key: 'nilgiri-estates-instant-coffee-100-g', wh: 'HYD' },
+  { key: 'fortune-sunlite-refined-sunflower-oil-1-l-pouch', wh: 'CHN' },
+  { key: 'fortune-filtered-groundnut-oil-1-l', wh: 'CHN' },
+  { key: 'tata-tea-premium-250-g', wh: 'MDU' },
+  { key: 'nescafe-classic-instant-coffee-100-g', wh: 'MDU' },
 ];
 
 /** Large one-off purchases that left excess stock. */
 export const OVERSTOCK: Array<{ key: string; wh: string; days: number }> = [
-  { key: 'sunmill-corn-flakes-475-g', wh: 'CHN', days: 170 },
-  { key: 'tulsi-home-aloe-body-wash-250-ml', wh: 'BLR', days: 220 },
-  { key: 'chai-bagan-green-tea-25-bags', wh: 'CHN', days: 160 },
-  { key: 'sunmill-fruit-nut-muesli-500-g', wh: 'HYD', days: 260 },
-  { key: 'tapti-tomato-ketchup-1-kg', wh: 'BLR', days: 150 },
+  { key: 'kellogg-s-corn-flakes-original-475-g', wh: 'CHN', days: 170 },
+  { key: 'dove-deeply-nourishing-body-wash-250-ml', wh: 'CBE', days: 220 },
+  { key: 'lipton-green-tea-honey-lemon-25-bags', wh: 'CHN', days: 160 },
+  { key: 'kellogg-s-muesli-fruit-nut-seeds-500-g', wh: 'MDU', days: 260 },
+  { key: 'kissan-fresh-tomato-ketchup-950-g', wh: 'CBE', days: 150 },
 ];
 export const OVERSTOCK_ORDER_OFFSET = -44;
 
 /** Items whose demand disappeared (all warehouses unless one is given). */
 export const DEAD_STOCK: Array<{ key: string; wh?: string; fromOffset: number }> = [
-  { key: 'tulsi-home-moisturising-lotion-400-ml', fromOffset: -135 },
-  { key: 'tapti-ready-to-eat-rajma-chawal-375-g', fromOffset: -120 },
-  { key: 'nimbus-glass-cleaner-500-ml', wh: 'HYD', fromOffset: -150 },
-  { key: 'aarogya-badam-drink-mix-200-g', fromOffset: -125 },
+  { key: 'nivea-nourishing-body-milk-400-ml', fromOffset: -135 },
+  { key: 'mtr-ready-to-eat-rajma-masala-300-g', fromOffset: -120 },
+  { key: 'colin-glass-surface-cleaner-500-ml', wh: 'MDU', fromOffset: -150 },
+  { key: 'mtr-badam-drink-mix-200-g', fromOffset: -125 },
 ];
 
 /** Batches that will expire soon (expiry moved to today + days after the simulation). */
 export const EXPIRING: Array<{ key: string; wh: string; days: number }> = [
-  { key: 'godavari-mixed-fruit-juice-1-l', wh: 'HYD', days: 9 },
-  { key: 'himgiri-cheese-slices-200-g', wh: 'BLR', days: 12 },
-  { key: 'himgiri-fresh-paneer-200-g', wh: 'BLR', days: 2 },
-  { key: 'himgiri-fresh-curd-400-g', wh: 'CHN', days: 1 },
-  { key: 'konkan-bakery-brown-bread-400-g', wh: 'CHN', days: 1 },
-  { key: 'crispo-aloo-bhujia-1-kg', wh: 'HYD', days: 20 },
+  { key: 'real-fruit-power-mixed-fruit-juice-1-l', wh: 'CBE', days: 9 },
+  { key: 'amul-cheese-slices-200-g', wh: 'CBE', days: 12 },
+  { key: 'milky-mist-paneer-200-g', wh: 'CBE', days: 2 },
+  { key: 'aavin-curd-500-g', wh: 'CHN', days: 1 },
+  { key: 'id-idly-dosa-batter-1-kg', wh: 'CHN', days: 1 },
+  { key: 'haldiram-s-aloo-bhujia-1-kg', wh: 'MDU', days: 20 },
 ];
 
 /** Demand spikes (a large one-off wholesale order). Stock is topped up beforehand so the spike is visible. */
 export const SPIKES: Array<{ key: string; wh: string; offset: number; factor: number }> = [
-  { key: 'crispo-aloo-bhujia-200-g', wh: 'CHN', offset: -1, factor: 6 },
-  { key: 'nilgiri-springs-packaged-drinking-water-20-l', wh: 'BLR', offset: -2, factor: 5 },
+  { key: 'haldiram-s-aloo-bhujia-200-g', wh: 'CHN', offset: -1, factor: 6 },
+  { key: 'bisleri-packaged-drinking-water-20-l', wh: 'CBE', offset: -2, factor: 5 },
 ];
 
 /** Repeated negative adjustments (shrinkage pattern). */
@@ -76,8 +76,8 @@ export const SHRINKAGE: Array<{
   events: Array<{ offset: number; qty: number; reason: 'SHRINKAGE' | 'DAMAGED' }>;
 }> = [
   {
-    key: 'kesar-farms-cashews-w320-250-g',
-    wh: 'HYD',
+    key: 'happilo-premium-whole-cashews-200-g',
+    wh: 'MDU',
     events: [
       { offset: -11, qty: 4, reason: 'SHRINKAGE' },
       { offset: -8, qty: 6, reason: 'DAMAGED' },
@@ -86,8 +86,8 @@ export const SHRINKAGE: Array<{
     ],
   },
   {
-    key: 'kesar-farms-california-almonds-250-g',
-    wh: 'HYD',
+    key: 'happilo-premium-california-almonds-200-g',
+    wh: 'MDU',
     events: [
       { offset: -9, qty: 3, reason: 'SHRINKAGE' },
       { offset: -6, qty: 4, reason: 'DAMAGED' },
@@ -96,37 +96,37 @@ export const SHRINKAGE: Array<{
   },
 ];
 
-/** A recent cycle count at Hyderabad with notable variances (fraction of on-hand, or absolute units). */
+/** A recent cycle count at Madurai with notable variances (fraction of on-hand, or absolute units). */
 export const COUNT_VARIANCE = {
-  wh: 'HYD',
+  wh: 'MDU',
   offset: -5,
   lines: [
-    { key: 'malabar-coast-green-cardamom-50-g', fraction: -0.14 },
-    { key: 'malabar-coast-black-pepper-100-g', fraction: -0.09 },
-    { key: 'aarogya-turmeric-powder-200-g', fraction: -0.02 },
-    { key: 'aarogya-cumin-seeds-100-g', units: 1 },
-    { key: 'malabar-coast-cloves-50-g', units: 0 },
-    { key: 'aarogya-mustard-seeds-200-g', units: 0 },
+    { key: 'catch-black-pepper-powder-100-g', fraction: -0.14 },
+    { key: 'lg-compounded-asafoetida-50-g', fraction: -0.09 },
+    { key: 'aachi-turmeric-powder-200-g', fraction: -0.02 },
+    { key: 'everest-jeera-powder-100-g', units: 1 },
+    { key: 'sakthi-coriander-powder-200-g', units: 0 },
+    { key: 'aachi-chilli-powder-200-g', units: 0 },
   ],
 };
 
 /** A partial delivery invoiced above the PO price (receipt ≠ PO). */
 export const RECEIPT_MISMATCH = {
-  supplier: 'MST',
+  supplier: 'EST',
   wh: 'CHN',
   orderOffset: -10,
   receiptOffset: -3,
   lines: [
-    { key: 'malabar-coast-green-cardamom-50-g', ordered: 120, received: 80, invoiceFactor: 1.12 },
-    { key: 'malabar-coast-black-pepper-100-g', ordered: 100, received: 100, invoiceFactor: 1 },
-    { key: 'malabar-coast-cloves-50-g', ordered: 60, received: 60, invoiceFactor: 1 },
+    { key: 'everest-kashmirilal-chilli-powder-100-g', ordered: 120, received: 80, invoiceFactor: 1.12 },
+    { key: 'catch-black-pepper-powder-100-g', ordered: 100, received: 100, invoiceFactor: 1 },
+    { key: 'lg-compounded-asafoetida-50-g', ordered: 60, received: 60, invoiceFactor: 1 },
   ],
 };
 
 /** Supplier price jump on one product. */
 export const COST_JUMP = {
-  supplier: 'MST',
-  key: 'malabar-coast-black-pepper-100-g',
+  supplier: 'EST',
+  key: 'catch-black-pepper-powder-100-g',
   fromOffset: -30,
   factor: 1.18,
 };
@@ -134,9 +134,9 @@ export const COST_JUMP = {
 /** Goods on the road between warehouses right now. */
 export const IN_TRANSIT = {
   from: 'CHN',
-  to: 'HYD',
+  to: 'MDU',
   lines: [
-    { key: 'sunmill-whole-wheat-atta-5-kg', qty: 32 },
-    { key: 'sunmill-refined-sugar-1-kg', qty: 60 },
+    { key: 'aashirvaad-shudh-chakki-atta-5-kg', qty: 32 },
+    { key: 'madhur-pure-hygienic-sugar-1-kg', qty: 60 },
   ],
 };

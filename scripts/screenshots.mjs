@@ -3,7 +3,7 @@
  * Visual QA: screenshots of every page at 1440 / 1024 / 390 px in light and dark, using the
  * installed Microsoft Edge (no browser download). Requires `pnpm dev` (or `pnpm start`) running.
  *
- *   node scripts/screenshots.mjs [--base=http://127.0.0.1:5173] [--out=data/screens] [--only=dashboard,login]
+ *   node scripts/screenshots.mjs [--base=http://127.0.0.1:5173] [--out=data/screens] [--only=dashboard,login] [--as=admin]
  */
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -14,6 +14,8 @@ const arg = (name, fallback) =>
 const base = arg('base', 'http://127.0.0.1:5173');
 const out = resolve(import.meta.dirname, '..', arg('out', 'data/screens'));
 const only = arg('only', '')?.split(',').filter(Boolean);
+// --as=admin|manager|staff, or a demo user's first name.
+const DEMO_USERS = { admin: 'jayasakthi', manager: 'shaheer', staff: 'sameer' };
 const as = arg('as', 'manager');
 mkdirSync(out, { recursive: true });
 
@@ -115,7 +117,7 @@ try {
   // Sign in once and reuse the session (sign-in is rate-limited).
   const authContext = await browser.newContext();
   const login = await authContext.request.post(`${base}/api/v1/auth/login`, {
-    data: { email: `${as}@kaveri.example`, password: 'stockroom2026' },
+    data: { email: `${DEMO_USERS[as] ?? as}@kaveri.example`, password: 'stockroom2026' },
     headers: { origin: base },
   });
   if (!login.ok()) throw new Error(`Login failed: ${login.status()} ${await login.text()}`);

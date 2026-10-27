@@ -90,21 +90,21 @@ const EXAMPLE_BARS = [
 const EXAMPLE_ROWS = [
   {
     sku: 'STP-RIC-001',
-    name: 'Sona Masoori Rice 5 kg',
+    name: '24 Mantra Organic Sona Masuri Rice 5 kg',
     stock: 412,
     value: 119480,
     status: 'In stock' as const,
   },
   {
     sku: 'OIL-OIL-001',
-    name: 'Sunflower Oil 1 L pouch',
+    name: 'Fortune Sunlite Refined Sunflower Oil 1 L pouch',
     stock: 0,
     value: 0,
     status: 'Out of stock' as const,
   },
   {
     sku: 'PKF-NDL-002',
-    name: 'Masala Instant Noodles 4-pack',
+    name: 'Maggi 2-Minute Masala Noodles 4 × 70 g',
     stock: 94,
     value: 4418,
     status: 'Low' as const,
@@ -285,8 +285,8 @@ function DesignPage() {
                 defaultValue="CHN"
                 options={[
                   { value: 'CHN', label: 'Chennai Central DC' },
-                  { value: 'BLR', label: 'Bengaluru North DC' },
-                  { value: 'HYD', label: 'Hyderabad Hub' },
+                  { value: 'CBE', label: 'Coimbatore DC' },
+                  { value: 'MDU', label: 'Madurai DC' },
                 ]}
               />
             </Field>
@@ -340,7 +340,7 @@ function DesignPage() {
               <Badge tone="success">+12.4%</Badge>
               <Badge tone="warning">Expires in 3 days</Badge>
               <Badge tone="danger">Overdue</Badge>
-              <Badge tone="outline">Private label</Badge>
+              <Badge tone="outline">Festive</Badge>
             </div>
             <Card className="p-4">
               <div className="flex items-center gap-2">
@@ -348,9 +348,9 @@ function DesignPage() {
                 <span className="text-xs text-fg-tertiary">Stock Sentinel · 2 min ago</span>
               </div>
               <p className="mt-2 text-sm">
-                Sunflower Oil 1 L is out of stock in Chennai. Purchase order PO-2026-03609 is 5 days overdue;
-                ordering 440 units from Sunrise Wholesale (2-day lead time) would restore cover before the
-                weekend.
+                Fortune Sunlite Sunflower Oil 1 L is out of stock in Chennai. Purchase order PO-2026-03609 is
+                5 days overdue; ordering 440 units from Sunrise Wholesale (2-day lead time) would restore
+                cover before the weekend.
               </p>
               <div className="mt-3 flex items-center gap-2">
                 <AiMarker source="rule" />
@@ -579,7 +579,7 @@ function DesignPage() {
               </SheetTrigger>
               <SheetContent>
                 <SheetHeader>
-                  <SheetTitle>Sunflower Oil 1 L pouch</SheetTitle>
+                  <SheetTitle>Fortune Sunlite Refined Sunflower Oil 1 L pouch</SheetTitle>
                   <SheetDescription>OIL-OIL-001 · Edible Oils & Ghee</SheetDescription>
                 </SheetHeader>
                 <SheetBody>
@@ -661,7 +661,7 @@ function DesignPage() {
             </Button>
 
             <div className="ml-auto flex items-center gap-2">
-              <Avatar name="Vikram Iyer" />
+              <Avatar name="Shaheer" />
               <Kbd>Ctrl</Kbd>
               <Kbd>K</Kbd>
             </div>
