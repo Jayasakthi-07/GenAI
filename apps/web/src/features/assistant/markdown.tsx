@@ -7,8 +7,36 @@ import { cn } from '@/lib/utils';
  * lists, tables, code, **bold**, *italic*, `code` and in-app links. It builds React elements
  * (never HTML strings), so model output can't inject markup.
  */
-export function Markdown({ text, className }: { text: string; className?: string }) {
-  return <div className={cn('flex flex-col gap-3 text-sm leading-relaxed', className)}>{blocks(text)}</div>;
+export function Markdown({
+  text,
+  className,
+  streaming = false,
+}: {
+  text: string;
+  className?: string;
+  /** The text is still arriving: hold back lines that would change shape once complete. */
+  streaming?: boolean;
+}) {
+  return (
+    <div className={cn('flex flex-col gap-3 text-sm leading-relaxed', className)}>
+      {blocks(streaming ? settled(text) : text)}
+    </div>
+  );
+}
+
+/**
+ * The part of a streaming answer that won't change shape when more arrives. A half-received table
+ * row, heading or list item would show as plain text and then jump into place when its line ends,
+ * so the unfinished last line appears only when it is prose, and a table's header row waits for
+ * the separator line beneath it.
+ */
+function settled(text: string): string {
+  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  const last = lines.pop() ?? '';
+  if (last.trim() && !/^\s*([|#>`*•-]|\d)/.test(last)) lines.push(last);
+  const end = lines.length - 1;
+  if (end >= 0 && isTableRow(lines[end] ?? '') && !isTableRow(lines[end - 1] ?? '')) lines.pop();
+  return lines.join('\n');
 }
 
 function inline(text: string, key = ''): ReactNode[] {

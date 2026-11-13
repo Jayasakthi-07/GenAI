@@ -142,7 +142,7 @@ export function ChatView({
                   <ToolTrail tools={live.tools} />
                   <PartsView parts={live.parts} messageId={null} />
                   {live.text ? (
-                    <Markdown text={live.text} />
+                    <Markdown text={live.text} streaming />
                   ) : (
                     !live.error && (
                       <p className="flex items-center gap-2 text-sm text-fg-tertiary">
