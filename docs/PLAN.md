@@ -1363,7 +1363,7 @@ Conventions:
 
 ### After acceptance — Tamil Nadu dataset (requested 2026-10-27)
 
-- [x] Team of four: Jayasakthi and Mehavardhini (admins), Shaheer (manager), Sameer (staff), all `@pmu.example`
+- [x] Team of four: Jayasakthi and Mehavardhini (admins), Shafeer (manager), Sameer (staff), all `@pmu.example`
       with the demo password. `USERS` carries a `key` the simulator uses for who did what.
 - [x] Everything in Tamil Nadu: warehouses Chennai (CHN), Coimbatore (CBE) and Madurai (MDU) replace Bengaluru and
       Hyderabad; the 12 suppliers are Tamil Nadu distributors (state code 33 GSTINs, local phone codes, Tamil contact

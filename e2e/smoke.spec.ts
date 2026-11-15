@@ -2,7 +2,7 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 
 /** The seeded demo accounts (DEMO_MODE): see apps/server/src/demo/catalog.ts. */
 const DEMO_PASSWORD = 'stockroom2026';
-const MANAGER = 'shaheer@pmu.example';
+const MANAGER = 'shafeer@pmu.example';
 const ADMIN = 'jayasakthi@pmu.example';
 
 /**

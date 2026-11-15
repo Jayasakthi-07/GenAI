@@ -15,7 +15,7 @@ const base = arg('base', 'http://127.0.0.1:5173');
 const out = resolve(import.meta.dirname, '..', arg('out', 'data/screens'));
 const only = arg('only', '')?.split(',').filter(Boolean);
 // --as=admin|manager|staff, or a demo user's first name.
-const DEMO_USERS = { admin: 'jayasakthi', manager: 'shaheer', staff: 'sameer' };
+const DEMO_USERS = { admin: 'jayasakthi', manager: 'shafeer', staff: 'sameer' };
 const as = arg('as', 'manager');
 mkdirSync(out, { recursive: true });
 

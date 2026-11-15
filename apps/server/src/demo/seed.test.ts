@@ -29,7 +29,7 @@ describe('demo dataset', () => {
     expect(USERS.map((u) => [u.name, u.role])).toEqual([
       ['Jayasakthi', 'ADMIN'],
       ['Mehavardhini', 'ADMIN'],
-      ['Shaheer', 'MANAGER'],
+      ['Shafeer', 'MANAGER'],
       ['Sameer', 'STAFF'],
     ]);
     expect(WAREHOUSES.map((w) => w.city)).toEqual(['Chennai', 'Coimbatore', 'Madurai']);

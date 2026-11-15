@@ -20,7 +20,7 @@ export const DEMO_PASSWORD = 'stockroom2026';
 export const USERS = [
   { key: 'admin', email: 'jayasakthi@pmu.example', name: 'Jayasakthi', role: 'ADMIN' },
   { key: 'admin2', email: 'mehavardhini@pmu.example', name: 'Mehavardhini', role: 'ADMIN' },
-  { key: 'manager', email: 'shaheer@pmu.example', name: 'Shaheer', role: 'MANAGER' },
+  { key: 'manager', email: 'shafeer@pmu.example', name: 'Shafeer', role: 'MANAGER' },
   { key: 'staff', email: 'sameer@pmu.example', name: 'Sameer', role: 'STAFF' },
 ] as const;
 export type DemoUserKey = (typeof USERS)[number]['key'];

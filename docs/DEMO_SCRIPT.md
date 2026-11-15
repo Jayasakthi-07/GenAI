@@ -10,7 +10,7 @@ simulator records sales and receipts through the same services people use.
 2. Sign in as **jayasakthi@pmu.example** (admin, password `stockroom2026`), open **Simulation** and press **Reset demo data**
    (under a minute). The Stock Sentinel, Demand Forecaster, Inventory Optimizer and Report Writer then take a
    first look; give them two or three minutes with a local model.
-3. Sign out and sign in as **shaheer@pmu.example** (manager): the manager approves things, which is the point of
+3. Sign out and sign in as **shafeer@pmu.example** (manager): the manager approves things, which is the point of
    the demo.
 4. On **Simulation**, set the speed to **Fastest** (one simulated day every 15 seconds) so deliveries arrive while
    you talk.

@@ -661,7 +661,7 @@ function DesignPage() {
             </Button>
 
             <div className="ml-auto flex items-center gap-2">
-              <Avatar name="Shaheer" />
+              <Avatar name="Shafeer" />
               <Kbd>Ctrl</Kbd>
               <Kbd>K</Kbd>
             </div>
